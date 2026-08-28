@@ -1,0 +1,22 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "shelter-ai"
+version = "1.0.0"
+description = "Software Based Model Development for Design of Area Specific Shelter for Thermal Comfort Maintenance."
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "fastapi>=0.110.0",
+    "uvicorn>=0.28.0",
+    "pydantic>=2.6.0",
+    "numpy>=1.26.0",
+    "pandas>=2.2.0",
+    "scipy>=1.12.0",
+    "requests>=2.31.0"
+]
+
+[tool.vercel]
+entrypoint = "backend.main:app"
