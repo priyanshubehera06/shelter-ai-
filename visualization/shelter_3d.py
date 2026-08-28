@@ -1,430 +1,780 @@
+"""
+shelter_3d.py — Parametric 3D Climate-Aware Digital Twin Engine for Shelter-AI.
+Powered by PyVista (VTK WebGL interactive renderer) and Streamlit integration.
+
+Features:
+- Parametric structural geometry (Length, Width, Height, Wall Thickness, Orientation)
+- Roof systems (Gable Pitched, Monoslope Shed, Hipped, Flat Slab) with variable pitch & overhang eaves
+- Openings (Parametric glazed panes, frames, entrance door, structural corner posts)
+- Engineering coordinate system & compact 3D Cardinal Compass (North indicator)
+- Astronomical solar positioning (NOAA solar altitude & azimuth from lat/lon/day/time)
+- Dynamic ground shadow footprint projection
+- Multi-mode engineering visualization:
+    1. Architectural Digital Twin (Realistic materials, dimensions, structural components)
+    2. Solar Exposure & Shading View (Incident solar beam, shadow footprint, shading factor)
+    3. Modeled Thermal Load View (Sol-Air & component heat fluxes from thermal simulation)
+    4. Conceptual Ventilation View (Wind streamlines & opening vectors from wind speed/direction)
+    5. Exploded Structural View (Separated envelope layers: slab, walls, roof)
+- Camera preset views (Isometric, Front, Side, Top/Plan, North Elevation)
+- Interactive PyVista WebGL renderer for Streamlit
+"""
+
+import math
+import os
+import tempfile
+from typing import Dict, List, Optional, Any, Tuple
 import numpy as np
-import pandas as pd
+import pyvista as pv
 import plotly.graph_objects as go
+import streamlit as st
+import streamlit.components.v1 as components
+
 from engine.geometry import ShelterGeometry
 
-def get_material_colors(wall_mat, roof_mat):
-    """
-    Map envelope material identifiers to realistic 3D mesh HEX colors.
-    """
-    w_lower = str(wall_mat).lower()
-    r_lower = str(roof_mat).lower()
+# Set PyVista off-screen mode for headless / server environments
+pv.OFF_SCREEN = True
 
-    # Wall colors
-    if "cseb" in w_lower or "ceb" in w_lower or "earth" in w_lower:
-        wall_color = "#d35400"  # Terracotta / Earth red-orange
-        wall_name = "Compressed Earth Block (CSEB)"
-    elif "eps" in w_lower or "sandwich" in w_lower:
-        wall_color = "#bdc3c7"  # Metallic Light Silver
-        wall_name = "EPS Sandwich Panel"
-    elif "aac" in w_lower or "aerated" in w_lower or "concrete" in w_lower:
-        wall_color = "#ecf0f1"  # Clean Off-White Concrete
-        wall_name = "AAC Aerated Concrete"
-    elif "bamboo" in w_lower:
-        wall_color = "#f39c12"  # Golden Bamboo Timber
-        wall_name = "Bamboo Composite"
-    elif "brick" in w_lower:
-        wall_color = "#c0392b"  # Deep Burnt Brick Red
-        wall_name = "Brick Masonry"
-    else:
-        wall_color = "#16a085"  # Teal default
-        wall_name = str(wall_mat).replace("_", " ").title()
 
-    # Roof colors
-    if "cgi" in r_lower or "metal" in r_lower or "sheet" in r_lower:
-        roof_color = "#2980b9"  # Slate / Corrugated Blue
-        roof_name = "Insulated CGI Sheet Roof"
-    elif "bamboo" in r_lower or "thatch" in r_lower:
-        roof_color = "#b9770e"  # Organic Bamboo Thatch Brown
-        roof_name = "Bamboo Thatch Roof"
-    elif "concrete" in r_lower or "slab" in r_lower:
-        roof_color = "#34495e"  # Dark Slate Concrete Slab
-        roof_name = "RCC Concrete Slab"
-    elif "solar" in r_lower or "pv" in r_lower:
-        roof_color = "#1a252f"  # Midnight Blue Solar PV
-        roof_name = "Integrated Solar PV Roof"
-    else:
-        roof_color = "#e67e22"
-        roof_name = str(roof_mat).replace("_", " ").title()
+# ==============================================================================
+# 1. SOLAR ASTRONOMY & POSITION CALCULATIONS (NOAA STANDARD)
+# ==============================================================================
 
-    return wall_color, roof_color, wall_name, roof_name
+def calculate_solar_position(
+    lat_deg: float = 21.4669,
+    lon_deg: float = 83.9812,
+    day_of_year: int = 135,
+    hour_of_day: float = 12.0,
+    timezone_offset: float = 5.5
+) -> Tuple[float, float, bool]:
+    lat_rad = math.radians(lat_deg)
+    gamma = 2.0 * math.pi / 365.0 * (day_of_year - 1 + (hour_of_day - 12.0) / 24.0)
+    eqtime = 229.18 * (0.000075 + 0.001868 * math.cos(gamma) - 0.032077 * math.sin(gamma) - 0.014615 * math.cos(2 * gamma) - 0.040849 * math.sin(2 * gamma))
+    decl = 0.006918 - 0.399912 * math.cos(gamma) + 0.070257 * math.sin(gamma) - 0.006758 * math.cos(2 * gamma) + 0.000907 * math.sin(2 * gamma) - 0.002697 * math.cos(3 * gamma) + 0.00148 * math.sin(3 * gamma)
+    time_offset = eqtime + 4.0 * lon_deg - 60.0 * timezone_offset
+    tst = hour_of_day * 60.0 + time_offset
+    ha_deg = (tst / 4.0) - 180.0
+    ha_rad = math.radians(ha_deg)
+    cos_zenith = math.sin(lat_rad) * math.sin(decl) + math.cos(lat_rad) * math.cos(decl) * math.cos(ha_rad)
+    cos_zenith = max(-1.0, min(1.0, cos_zenith))
+    zenith_rad = math.acos(cos_zenith)
+    altitude_deg = 90.0 - math.degrees(zenith_rad)
+    is_daylight = altitude_deg > 0.0
+    if not is_daylight: altitude_deg = 0.0
+    cos_az = (math.sin(decl) - math.cos(zenith_rad) * math.sin(lat_rad)) / (math.sin(zenith_rad) * math.cos(lat_rad) + 1e-9)
+    cos_az = max(-1.0, min(1.0, cos_az))
+    azimuth_rad = math.acos(cos_az)
+    azimuth_deg = math.degrees(azimuth_rad)
+    if ha_deg > 0: azimuth_deg = (360.0 - azimuth_deg) % 360.0
+    else: azimuth_deg = azimuth_deg % 360.0
+    return round(altitude_deg, 2), round(azimuth_deg, 2), is_daylight
 
-def calculate_surface_thermal_color(normal_vector, sun_vector, base_temp=30.0, max_ghi=850.0):
-    """
-    Computes Sol-Air temperature color gradient (Cool Blue -> Amber -> Hot Red)
-    based on solar incident angle cos(theta).
-    """
+
+def get_solar_vector(altitude_deg: float, azimuth_deg: float) -> np.ndarray:
+    alt_rad = math.radians(altitude_deg)
+    az_rad = math.radians(azimuth_deg)
+    vx = math.sin(az_rad) * math.cos(alt_rad)
+    vy = math.cos(az_rad) * math.cos(alt_rad)
+    vz = math.sin(alt_rad)
+    vec = np.array([vx, vy, vz], dtype=float)
+    return vec / np.linalg.norm(vec)
+
+
+# ==============================================================================
+# 2. MATERIAL PROPERTIES & COLOR SYSTEM
+# ==============================================================================
+
+MATERIAL_SPECS = {
+    'cseb_interlocking': {
+        'name': 'Compressed Earth Block (CSEB)',
+        'color': '#c0392b',
+        'diffuse': 0.85,
+        'specular': 0.08,
+        'ambient': 0.30,
+        'category': 'High Thermal Mass',
+        'description': 'Eco-friendly stabilized earth block with excellent diurnal thermal inertia.'
+    },
+    'brick_standard': {
+        'name': 'Burnt Clay Brick Masonry',
+        'color': '#d35400',
+        'diffuse': 0.85,
+        'specular': 0.10,
+        'ambient': 0.28,
+        'category': 'Standard Masonry',
+        'description': 'Traditional burnt brick with medium thermal resistance and high durability.'
+    },
+    'aac_block': {
+        'name': 'Autoclaved Aerated Concrete (AAC)',
+        'color': '#bdc3c7',
+        'diffuse': 0.90,
+        'specular': 0.05,
+        'ambient': 0.35,
+        'category': 'Insulating Masonry',
+        'description': 'Lightweight porous concrete block with high thermal insulation.'
+    },
+    'eps_sandwich': {
+        'name': 'EPS Insulated Sandwich Panel',
+        'color': '#ecf0f1',
+        'diffuse': 0.92,
+        'specular': 0.15,
+        'ambient': 0.35,
+        'category': 'Pre-Engineered Panel',
+        'description': 'Rapid deployable composite panel with extreme thermal resistance.'
+    },
+    'bamboo_composite': {
+        'name': 'Treated Bamboo Wattle & Daub',
+        'color': '#d4ac0d',
+        'diffuse': 0.85,
+        'specular': 0.08,
+        'ambient': 0.30,
+        'category': 'Bio-Based Low Carbon',
+        'description': 'Locally sourced breathable timber composite for high cross-ventilation.'
+    },
+    'roof_cgi_insulated': {
+        'name': 'Insulated Corrugated CGI Roof',
+        'color': '#2980b9',
+        'diffuse': 0.75,
+        'specular': 0.35,
+        'ambient': 0.25,
+        'category': 'Metal Composite',
+        'description': 'Corrugated galvanized iron with 50mm thermal insulation underlay.'
+    },
+    'roof_cgi_sheet': {
+        'name': 'Uninsulated CGI Metal Sheet',
+        'color': '#7f8c8d',
+        'diffuse': 0.70,
+        'specular': 0.45,
+        'ambient': 0.25,
+        'category': 'Rapid Metal',
+        'description': 'Single-skin corrugated metal sheet; high solar heat gain risk.'
+    },
+    'roof_concrete_slab': {
+        'name': 'Reinforced Concrete Slab (RCC)',
+        'color': '#34495e',
+        'diffuse': 0.88,
+        'specular': 0.08,
+        'ambient': 0.25,
+        'category': 'Heavy Thermal Mass',
+        'description': 'Monolithic concrete slab with high thermal storage and long lifespan.'
+    },
+    'roof_bamboo_thatch': {
+        'name': 'Bamboo Thatch & Mud Tile',
+        'color': '#a0522d',
+        'diffuse': 0.90,
+        'specular': 0.05,
+        'ambient': 0.30,
+        'category': 'Organic Passive',
+        'description': 'Natural thatched roofing providing superior radiant heat rejection.'
+    },
+    'roof_solar_pv': {
+        'name': 'Building Integrated PV (BIPV) Roof',
+        'color': '#1a252f',
+        'diffuse': 0.60,
+        'specular': 0.60,
+        'ambient': 0.20,
+        'category': 'Active Solar',
+        'description': 'High-efficiency monocrystalline solar roof generating clean electricity.'
+    }
+}
+
+
+def get_material_colors(wall_mat_id: str, roof_mat_id: str) -> Tuple[str, str, str, str]:
+    w_key = str(wall_mat_id).lower()
+    r_key = str(roof_mat_id).lower()
+    w_spec = MATERIAL_SPECS.get(w_key, None)
+    if not w_spec:
+        for k, v in MATERIAL_SPECS.items():
+            if k in w_key or any(w in w_key for w in k.split('_')):
+                w_spec = v
+                break
+    if not w_spec: w_spec = {'name': str(wall_mat_id).replace('_', ' ').title(), 'color': '#c0392b'}
+    r_spec = MATERIAL_SPECS.get(r_key, None)
+    if not r_spec:
+        for k, v in MATERIAL_SPECS.items():
+            if k in r_key or any(w in r_key for w in k.split('_')):
+                r_spec = v
+                break
+    if not r_spec: r_spec = {'name': str(roof_mat_id).replace('_', ' ').title(), 'color': '#2980b9'}
+    return w_spec['color'], r_spec['color'], w_spec['name'], r_spec['name']
+
+
+def calculate_surface_thermal_color(normal_vector: np.ndarray, sun_vector: np.ndarray, base_temp: float = 30.0, max_ghi: float = 850.0) -> Tuple[str, float]:
     cos_theta = max(0.0, float(np.dot(normal_vector, sun_vector)))
-    sol_air_t = base_temp + (cos_theta * (max_ghi / 30.0))  # approx sol-air rise
-    
-    # Normalize sol_air_t between 20°C and 55°C
+    sol_air_t = base_temp + (cos_theta * (max_ghi / 30.0))
     norm = np.clip((sol_air_t - 20.0) / 35.0, 0.0, 1.0)
-    
-    # Interpolate from Navy Blue (0.0) -> Yellow-Orange (0.5) -> Crimson Red (1.0)
     if norm < 0.5:
         t = norm * 2.0
-        r = int(41 + t * (243 - 41))
-        g = int(128 + t * (156 - 128))
-        b = int(185 - t * (185 - 18))
+        r, g, b = int(41 + t * 202), int(128 + t * 28), int(185 - t * 167)
     else:
         t = (norm - 0.5) * 2.0
-        r = int(243 + t * (231 - 243))
-        g = int(156 - t * (156 - 76))
-        b = int(18 + t * (60 - 18))
-        
-    return f"rgb({r},{g},{b})", round(sol_air_t, 1)
+        r, g, b = int(243 - t * 12), int(156 - t * 80), int(18 + t * 42)
+    return f"#{r:02x}{g:02x}{b:02x}", round(sol_air_t, 1)
 
-def create_plotly_3d_shelter(
-    geometry: ShelterGeometry, 
-    wall_mat="cseb_interlocking", 
-    roof_mat="roof_cgi_insulated",
-    view_mode="architectural",
-    hour_of_day=12,
-    solar_ghi=850.0,
-    occupants=4,
-    show_interior=True
-):
-    """
-    Renders high-realism, dynamic 3D Parametric Architectural Shelter Model with:
-    - Dynamic dimensions ($L \times W \times H$)
-    - Multi-roof types (Gable Pitched, Monoslope / Shed, Flat Slab)
-    - Foundation concrete slab
-    - Window glazing & architectural entrance door
-    - Corner structural support posts
-    - Interactive 24-Hour Solar Vector & Sun Path
-    - Sol-Air Thermal Surface Heatmap overlay mode
-    - Interior occupancy spatial zones & furniture layout
-    - Blueprint dimension callout lines
-    """
+
+# ==============================================================================
+# 3. 3D ROTATION & GEOMETRIC COORDINATE HELPERS
+# ==============================================================================
+
+def rotate_points_z(xs, ys, zs, angle_deg, cx, cy):
+    if angle_deg % 360.0 == 0.0:
+        return xs, ys, zs
+    rad = math.radians(-angle_deg)
+    cos_a, sin_a = math.cos(rad), math.sin(rad)
+    out_x, out_y, out_z = [], [], []
+    for x, y, z in zip(xs, ys, zs):
+        dx, dy = x - cx, y - cy
+        out_x.append(cx + dx * cos_a - dy * sin_a)
+        out_y.append(cy + dx * sin_a + dy * cos_a)
+        out_z.append(z)
+    return out_x, out_y, out_z
+
+
+def rotate_mesh_z(mesh: pv.PolyData, angle_deg: float, cx: float, cy: float) -> pv.PolyData:
+    if angle_deg % 360.0 == 0.0 or mesh.n_points == 0:
+        return mesh
+    m = mesh.copy()
+    m.translate((-cx, -cy, 0.0), inplace=True)
+    m.rotate_z(-angle_deg, inplace=True)
+    m.translate((cx, cy, 0.0), inplace=True)
+    return m
+
+
+# ==============================================================================
+# 4. PYVISTA PARAMETRIC SHELTER MESH BUILDERS
+# ==============================================================================
+
+def create_box_mesh(bounds: Tuple[float, float, float, float, float, float]) -> pv.PolyData:
+    xmin, xmax, ymin, ymax, zmin, zmax = bounds
+    if xmax <= xmin or ymax <= ymin or zmax <= zmin:
+        return pv.PolyData()
+    return pv.Box(bounds=(xmin, xmax, ymin, ymax, zmin, zmax)).triangulate()
+
+
+def build_parametric_walls(geometry: ShelterGeometry, wall_thickness: float, wwr: float, door_w: float = 0.9, door_h: float = 2.1) -> Tuple[pv.PolyData, pv.PolyData, pv.PolyData, pv.PolyData]:
     L = geometry.length
     W = geometry.width
     H = geometry.height
-    pitch = geometry.roof_pitch
-    roof_type = geometry.roof_type
+    t = max(0.12, wall_thickness)
+    
+    wall_blocks = []
+    win_blocks = []
+    frame_blocks = []
+    door_blocks = []
+    
+    door_cx = L / 2.0
+    door_x0 = max(0.3, door_cx - door_w / 2.0)
+    door_x1 = min(L - 0.3, door_cx + door_w / 2.0)
+    
+    # South Wall (Front)
+    wall_blocks.append(create_box_mesh((0, door_x0, 0, t, 0, H)))
+    wall_blocks.append(create_box_mesh((door_x1, L, 0, t, 0, H)))
+    wall_blocks.append(create_box_mesh((door_x0, door_x1, 0, t, door_h, H)))
+    door_blocks.append(create_box_mesh((door_x0 + 0.02, door_x1 - 0.02, t * 0.2, t * 0.8, 0.02, door_h - 0.02)))
+    
+    # North Wall (Back)
+    if wwr > 0.05:
+        win_w = min(1.5, L * 0.35 * (wwr / 0.15))
+        win_h = min(1.2, H * 0.45)
+        win_z0 = H * 0.35
+        wx0 = L / 2.0 - win_w / 2.0
+        wx1 = L / 2.0 + win_w / 2.0
+        wall_blocks.append(create_box_mesh((0, wx0, W - t, W, 0, H)))
+        wall_blocks.append(create_box_mesh((wx1, L, W - t, W, 0, H)))
+        wall_blocks.append(create_box_mesh((wx0, wx1, W - t, W, 0, win_z0)))
+        wall_blocks.append(create_box_mesh((wx0, wx1, W - t, W, win_z0 + win_h, H)))
+        win_blocks.append(create_box_mesh((wx0 + 0.03, wx1 - 0.03, W - t * 0.6, W - t * 0.4, win_z0 + 0.03, win_z0 + win_h - 0.03)))
+        frame_blocks.append(create_box_mesh((wx0, wx1, W - t * 0.8, W - t * 0.2, win_z0, win_z0 + win_h)))
+    else:
+        wall_blocks.append(create_box_mesh((0, L, W - t, W, 0, H)))
+        
+    # West Wall (Left)
+    wall_blocks.append(create_box_mesh((0, t, t, W - t, 0, H)))
+    # East Wall (Right)
+    wall_blocks.append(create_box_mesh((L - t, L, t, W - t, 0, H)))
+    
+    def merge_all(blocks):
+        valid = [b for b in blocks if b.n_points > 0]
+        if not valid: return pv.PolyData()
+        res = valid[0].copy()
+        for b in valid[1:]:
+            res = res.merge(b)
+        return res
+
+    return merge_all(wall_blocks), merge_all(door_blocks), merge_all(win_blocks), merge_all(frame_blocks)
+
+
+def build_parametric_roof(geometry: ShelterGeometry, roof_thickness: float = 0.08) -> Tuple[pv.PolyData, pv.PolyData, float]:
+    L = geometry.length
+    W = geometry.width
+    H = geometry.height
+    pitch_deg = geometry.roof_pitch
+    roof_type = geometry.roof_type.lower()
     overhang = geometry.overhang
-    wwr = geometry.wwr
-    orientation = geometry.orientation
+    th = max(0.04, roof_thickness)
     
-    wall_color, roof_color, wall_label, roof_label = get_material_colors(wall_mat, roof_mat)
-
-    # Compute solar position vector based on hour_of_day and orientation
-    # Hour 6 = East sunrise, Hour 12 = Solar Noon, Hour 18 = West sunset
-    hour_clamped = max(0, min(23, int(hour_of_day)))
-    is_daytime = 6 <= hour_clamped <= 18
+    e_x0 = -overhang
+    e_x1 = L + overhang
+    e_y0 = -overhang
+    e_y1 = W + overhang
     
-    if is_daytime:
-        solar_hour_angle = (hour_clamped - 12) * 15.0  # degrees from noon
-        sol_altitude_deg = max(5.0, 90.0 - abs(solar_hour_angle * 1.1))
-        sol_azimuth_deg = (orientation + solar_hour_angle) % 360.0
-    else:
-        sol_altitude_deg = 0.0
-        sol_azimuth_deg = orientation
-
-    rad_alt = np.radians(sol_altitude_deg)
-    rad_az = np.radians(sol_azimuth_deg)
+    rad = math.radians(pitch_deg)
+    delta_h = geometry.roof_height_delta()
+    peak_z = H + delta_h
     
-    sun_dir = np.array([
-        np.cos(rad_alt) * np.cos(rad_az),
-        np.cos(rad_alt) * np.sin(rad_az),
-        np.sin(rad_alt) if is_daytime else 0.1
-    ])
-    sun_dir = sun_dir / (np.linalg.norm(sun_dir) or 1.0)
-
-    fig = go.Figure()
-
-    # 1. FOUNDATION CONCRETE SLAB
-    slab_margin = 0.35
-    sx = [-slab_margin, L + slab_margin, L + slab_margin, -slab_margin,  -slab_margin, L + slab_margin, L + slab_margin, -slab_margin]
-    sy = [-slab_margin, -slab_margin, W + slab_margin, W + slab_margin,  -slab_margin, -slab_margin, W + slab_margin, W + slab_margin]
-    sz = [-0.22, -0.22, -0.22, -0.22,  0.0, 0.0, 0.0, 0.0]
+    roof_blocks = []
+    shading_blocks = []
     
-    si = [0, 0, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5]
-    sj = [1, 4, 2, 5, 3, 6, 0, 7, 5, 7, 6, 7]
-    sk = [4, 5, 5, 6, 6, 7, 7, 4, 6, 6, 7, 4]
-
-    fig.add_trace(go.Mesh3d(
-        x=sx, y=sy, z=sz, i=si, j=sj, k=sk,
-        color="#5d6d7e", opacity=0.9, name="Foundation Concrete Slab", showscale=False
-    ))
-
-    # Compute wall thermal colors if in heatmap mode
-    if view_mode == "thermal_heatmap" and is_daytime:
-        c_front, t_front = calculate_surface_thermal_color(np.array([0, -1, 0]), sun_dir, max_ghi=solar_ghi)
-        c_back, t_back = calculate_surface_thermal_color(np.array([0, 1, 0]), sun_dir, max_ghi=solar_ghi)
-        c_left, t_left = calculate_surface_thermal_color(np.array([-1, 0, 0]), sun_dir, max_ghi=solar_ghi)
-        c_right, t_right = calculate_surface_thermal_color(np.array([1, 0, 0]), sun_dir, max_ghi=solar_ghi)
-        c_roof, t_roof = calculate_surface_thermal_color(np.array([0, 0, 1]), sun_dir, max_ghi=solar_ghi)
+    if roof_type == 'pitched' and pitch_deg > 0:
+        ridge_y = W / 2.0
+        eave_z = H - overhang * math.tan(rad)
         
-        wall_front_c, wall_back_c = c_front, c_back
-        wall_left_c, wall_right_c = c_left, c_right
-        roof_surface_c = c_roof
-    else:
-        wall_front_c = wall_back_c = wall_left_c = wall_right_c = wall_color
-        roof_surface_c = roof_color
-
-    # 2. ENVELOPE WALLS
-    # Front Wall (y = 0)
-    fig.add_trace(go.Mesh3d(
-        x=[0, L, L, 0], y=[0, 0, 0, 0], z=[0, 0, H, H],
-        i=[0, 0], j=[1, 2], k=[2, 3],
-        color=wall_front_c, opacity=0.92, name=f"Front Wall ({wall_label})", showscale=False
-    ))
-    # Back Wall (y = W)
-    fig.add_trace(go.Mesh3d(
-        x=[0, L, L, 0], y=[W, W, W, W], z=[0, 0, H, H],
-        i=[0, 0], j=[1, 2], k=[2, 3],
-        color=wall_back_c, opacity=0.92, name="Back Wall", showscale=False
-    ))
-    # Left Wall (x = 0)
-    fig.add_trace(go.Mesh3d(
-        x=[0, 0, 0, 0], y=[0, W, W, 0], z=[0, 0, H, H],
-        i=[0, 0], j=[1, 2], k=[2, 3],
-        color=wall_left_c, opacity=0.92, name="Left Wall", showscale=False
-    ))
-    # Right Wall (x = L)
-    fig.add_trace(go.Mesh3d(
-        x=[L, L, L, L], y=[0, W, W, 0], z=[0, 0, H, H],
-        i=[0, 0], j=[1, 2], k=[2, 3],
-        color=wall_right_c, opacity=0.92, name="Right Wall", showscale=False
-    ))
-
-    # 3. WINDOW GLAZING PANES & ARCHITECTURAL ENTRANCE DOOR
-    if wwr > 0.02:
-        win_w = max(0.8, L * 0.45 * min(1.0, wwr * 3.2))
-        win_h = max(0.8, H * 0.38)
-        wx_start = min(L - win_w - 0.3, max(0.6, (L - win_w) / 2.0 + 0.3))
-        wx_end = wx_start + win_w
-        wz_start = H * 0.32
-        wz_end = wz_start + win_h
+        # South slope
+        s_mesh = pv.PolyData(np.array([
+            [e_x0, e_y0, eave_z],
+            [e_x1, e_y0, eave_z],
+            [e_x1, ridge_y, peak_z],
+            [e_x0, ridge_y, peak_z]
+        ]), faces=np.array([4, 0, 1, 2, 3])).extrude([0, 0, -th], capping=True)
+        roof_blocks.append(s_mesh)
         
-        fig.add_trace(go.Mesh3d(
-            x=[wx_start, wx_end, wx_end, wx_start],
-            y=[-0.02, -0.02, -0.02, -0.02],
-            z=[wz_start, wz_start, wz_end, wz_end],
-            i=[0, 0], j=[1, 2], k=[2, 3],
-            color="#38ef7d" if view_mode == "architectural" else "#3498db",
-            opacity=0.75, name=f"Glazed Window ({wwr*100:.0f}% WWR)", showscale=False
-        ))
-        # Window Frame Border
-        fig.add_trace(go.Scatter3d(
-            x=[wx_start, wx_end, wx_end, wx_start, wx_start],
-            y=[-0.02, -0.02, -0.02, -0.02, -0.02],
-            z=[wz_start, wz_start, wz_end, wz_end, wz_start],
-            mode="lines", line=dict(color="#117a65", width=4), showlegend=False
-        ))
-
-    # Entrance Door on Front Facade
-    door_w = min(1.0, max(0.7, L * 0.18))
-    door_x0 = 0.3
-    door_x1 = door_x0 + door_w
-    door_z1 = min(H * 0.78, 2.15)
-    
-    fig.add_trace(go.Mesh3d(
-        x=[door_x0, door_x1, door_x1, door_x0],
-        y=[-0.03, -0.03, -0.03, -0.03],
-        z=[0, 0, door_z1, door_z1],
-        i=[0, 0], j=[1, 2], k=[2, 3],
-        color="#4a235a", opacity=0.95, name="Main Entrance Door", showscale=False
-    ))
-    fig.add_trace(go.Scatter3d(
-        x=[door_x0, door_x1, door_x1, door_x0, door_x0],
-        y=[-0.03, -0.03, -0.03, -0.03, -0.03],
-        z=[0, 0, door_z1, door_z1, 0],
-        mode="lines", line=dict(color="#1a001a", width=4), showlegend=False
-    ))
-
-    # 4. DYNAMIC ROOF ASSEMBLY BASED ON ROOF TYPE
-    oh = overhang
-    rx0, rx1 = -oh, L + oh
-    ry0, ry2 = -oh, W + oh
-
-    if roof_type == "pitched":
-        # Double-slope gable roof
-        roof_delta = (W / 2.0) * np.tan(np.radians(pitch))
-        roof_apex_h = H + max(0.3, roof_delta)
-        ry1 = W / 2.0
+        # North slope
+        n_mesh = pv.PolyData(np.array([
+            [e_x0, ridge_y, peak_z],
+            [e_x1, ridge_y, peak_z],
+            [e_x1, e_y1, eave_z],
+            [e_x0, e_y1, eave_z]
+        ]), faces=np.array([4, 0, 1, 2, 3])).extrude([0, 0, -th], capping=True)
+        roof_blocks.append(n_mesh)
         
-        # Left Slope
-        fig.add_trace(go.Mesh3d(
-            x=[rx0, rx1, rx1, rx0],
-            y=[ry0, ry0, ry1, ry1],
-            z=[H, H, roof_apex_h, roof_apex_h],
-            i=[0, 0], j=[1, 2], k=[2, 3],
-            color=roof_surface_c, opacity=0.95, name=f"Roof: {roof_label}", showscale=False
-        ))
-        # Right Slope
-        fig.add_trace(go.Mesh3d(
-            x=[rx0, rx1, rx1, rx0],
-            y=[ry1, ry1, ry2, ry2],
-            z=[roof_apex_h, roof_apex_h, H, H],
-            i=[0, 0], j=[1, 2], k=[2, 3],
-            color=roof_surface_c, opacity=0.95, name="Roof Slope Right", showscale=False
-        ))
-        # Front Triangular Gable Wall
-        fig.add_trace(go.Mesh3d(
-            x=[0, L/2.0, L], y=[0, 0, 0], z=[H, roof_apex_h, H],
-            i=[0], j=[1], k=[2], color=wall_front_c, opacity=0.92, showlegend=False
-        ))
-        # Back Triangular Gable Wall
-        fig.add_trace(go.Mesh3d(
-            x=[0, L/2.0, L], y=[W, W, W], z=[H, roof_apex_h, H],
-            i=[0], j=[1], k=[2], color=wall_back_c, opacity=0.92, showlegend=False
-        ))
-        roof_top_z = roof_apex_h
-
-    elif roof_type == "monoslope":
-        # Single-slope shed roof rising from Front to Back
-        roof_delta = W * np.tan(np.radians(pitch))
-        roof_top_z = H + max(0.3, roof_delta)
+        # Triangular Gable End Walls
+        g_w = pv.PolyData(np.array([[0, 0, H], [0, W, H], [0, ridge_y, peak_z]]), faces=np.array([3, 0, 1, 2])).extrude([0.15, 0, 0], capping=True)
+        g_e = pv.PolyData(np.array([[L, 0, H], [L, W, H], [L, ridge_y, peak_z]]), faces=np.array([3, 0, 2, 1])).extrude([-0.15, 0, 0], capping=True)
+        roof_blocks.extend([g_w, g_e])
         
-        fig.add_trace(go.Mesh3d(
-            x=[rx0, rx1, rx1, rx0],
-            y=[ry0, ry0, ry2, ry2],
-            z=[H, H, roof_top_z, roof_top_z],
-            i=[0, 0], j=[1, 2], k=[2, 3],
-            color=roof_surface_c, opacity=0.95, name=f"Monoslope Roof ({roof_label})", showscale=False
-        ))
-        # Side Gable triangles
-        fig.add_trace(go.Mesh3d(
-            x=[0, 0, 0], y=[0, W, W], z=[H, H, roof_top_z],
-            i=[0], j=[1], k=[2], color=wall_left_c, opacity=0.92, showlegend=False
-        ))
-        fig.add_trace(go.Mesh3d(
-            x=[L, L, L], y=[0, W, W], z=[H, H, roof_top_z],
-            i=[0], j=[1], k=[2], color=wall_right_c, opacity=0.92, showlegend=False
-        ))
-    else:
-        # Flat Overhang Slab
-        roof_top_z = H + 0.18
-        fig.add_trace(go.Mesh3d(
-            x=[rx0, rx1, rx1, rx0],
-            y=[ry0, ry0, ry2, ry2],
-            z=[H+0.05, H+0.05, roof_top_z, roof_top_z],
-            i=[0, 0], j=[1, 2], k=[2, 3],
-            color=roof_surface_c, opacity=0.95, name=f"Flat Roof Slab ({roof_label})", showscale=False
-        ))
-
-    # 5. CORNER STRUCTURAL POSTS
-    posts_x = [0, L, L, 0]
-    posts_y = [0, 0, W, W]
-    for px, py in zip(posts_x, posts_y):
-        fig.add_trace(go.Scatter3d(
-            x=[px, px], y=[py, py], z=[0, H],
-            mode="lines", line=dict(color="#1a252f", width=7), showlegend=False
-        ))
-
-    # 6. INTERIOR OCCUPANCY SPATIAL ZONES
-    if show_interior and occupants > 0:
-        occ_count = min(12, int(occupants))
-        grid_cols = max(1, int(np.ceil(np.sqrt(occ_count))))
-        grid_rows = int(np.ceil(occ_count / grid_cols))
-        
-        spacing_x = (L - 1.2) / max(1, grid_cols)
-        spacing_y = (W - 1.0) / max(1, grid_rows)
-        
-        bed_xs, bed_ys, bed_zs = [], [], []
-        for idx in range(occ_count):
-            r = idx // grid_cols
-            c = idx % grid_cols
-            bx = 0.8 + c * spacing_x
-            by = 0.6 + r * spacing_y
-            bed_xs.append(bx)
-            bed_ys.append(by)
-            bed_zs.append(0.2)
+        if overhang > 0.1:
+            shading_blocks.append(create_box_mesh((e_x0, e_x1, e_y0 - 0.04, e_y0, eave_z - 0.1, eave_z + 0.02)))
+            shading_blocks.append(create_box_mesh((e_x0, e_x1, e_y1, e_y1 + 0.04, eave_z - 0.1, eave_z + 0.02)))
             
-        fig.add_trace(go.Scatter3d(
-            x=bed_xs, y=bed_ys, z=bed_zs,
-            mode="markers+text",
-            marker=dict(size=8, color="#2ecc71", symbol="diamond"),
-            text=[f"P{i+1}" for i in range(occ_count)],
-            textposition="top center",
-            name=f"Occupant Zones ({occ_count} Ppl)"
-        ))
+    elif roof_type == 'monoslope' and pitch_deg > 0:
+        z_low = H - overhang * math.tan(rad)
+        z_high = H + (W + overhang) * math.tan(rad)
+        peak_z = z_high
+        m_mesh = pv.PolyData(np.array([
+            [e_x0, e_y0, z_low],
+            [e_x1, e_y0, z_low],
+            [e_x1, e_y1, z_high],
+            [e_x0, e_y1, z_high]
+        ]), faces=np.array([4, 0, 1, 2, 3])).extrude([0, 0, -th], capping=True)
+        roof_blocks.append(m_mesh)
+        
+        side_w = pv.PolyData(np.array([[0, 0, H], [0, W, H], [0, W, H + W * math.tan(rad)], [0, 0, H]]), faces=np.array([4, 0, 1, 2, 3])).extrude([0.15, 0, 0], capping=True)
+        side_e = pv.PolyData(np.array([[L, 0, H], [L, W, H], [L, W, H + W * math.tan(rad)], [L, 0, H]]), faces=np.array([4, 0, 3, 2, 1])).extrude([-0.15, 0, 0], capping=True)
+        roof_blocks.extend([side_w, side_e])
+    else:
+        peak_z = H + 0.15
+        roof_blocks.append(create_box_mesh((e_x0, e_x1, e_y0, e_y1, H, H + 0.15)))
+        
+    def merge_all(blocks):
+        valid = [b for b in blocks if b.n_points > 0]
+        if not valid: return pv.PolyData()
+        res = valid[0].copy()
+        for b in valid[1:]:
+            res = res.merge(b)
+        return res
+        
+    return merge_all(roof_blocks), merge_all(shading_blocks), peak_z
 
-    # 7. 24-HOUR SOLAR VECTOR & DYNAMIC SUN POSITION
-    sun_dist = max(L, W) * 1.35
-    sun_x = L / 2.0 + sun_dist * sun_dir[0]
-    sun_y = W / 2.0 + sun_dist * sun_dir[1]
-    sun_z = roof_top_z + sun_dist * sun_dir[2]
 
+def build_ground_and_compass(L: float, W: float, cx: float, cy: float, radius: float = 12.0) -> Tuple[pv.PolyData, pv.PolyData, pv.PolyData]:
+    ground = pv.Cylinder(center=(cx, cy, -0.06), direction=(0, 0, 1), radius=radius, height=0.10, resolution=64).triangulate()
+    grid_lines = []
+    step = 2.0
+    for x in np.arange(cx - radius * 0.8, cx + radius * 0.8 + 0.1, step):
+        y_max = math.sqrt(max(0.1, (radius * 0.85)**2 - (x - cx)**2))
+        grid_lines.append(pv.Line((x, cy - y_max, -0.005), (x, cy + y_max, -0.005)))
+    for y in np.arange(cy - radius * 0.8, cy + radius * 0.8 + 0.1, step):
+        x_max = math.sqrt(max(0.1, (radius * 0.85)**2 - (y - cy)**2))
+        grid_lines.append(pv.Line((cx - x_max, y, -0.005), (cx + x_max, y, -0.005)))
+        
+    grid_mesh = pv.PolyData()
+    for gl in grid_lines:
+        grid_mesh = grid_mesh.merge(gl)
+        
+    comp_x = cx - radius * 0.65
+    comp_y = cy - radius * 0.65
+    comp_z = 0.02
+    
+    ring = pv.Disc(center=(comp_x, comp_y, comp_z), inner=0.35, outer=0.65, r_res=2, c_res=32)
+    n_arrow = pv.Arrow(start=(comp_x, comp_y, comp_z + 0.02), direction=(0, 1, 0), tip_length=0.4, tip_radius=0.12, shaft_radius=0.04, scale=1.0)
+    e_arrow = pv.Arrow(start=(comp_x, comp_y, comp_z + 0.02), direction=(1, 0, 0), tip_length=0.4, tip_radius=0.10, shaft_radius=0.03, scale=0.8)
+    compass_mesh = ring.merge(n_arrow).merge(e_arrow)
+    
+    return ground, grid_mesh, compass_mesh
+
+
+def build_solar_path_and_sun(latitude: float, longitude: float, day_of_year: int, hour_of_day: float, cx: float, cy: float, peak_z: float, sun_dist: float = 12.0):
+    sol_alt, sol_az, is_daylight = calculate_solar_position(latitude, longitude, day_of_year, hour_of_day)
+    sun_dir = get_solar_vector(sol_alt, sol_az)
+    sun_x = cx + sun_dist * sun_dir[0]
+    sun_y = cy + sun_dist * sun_dir[1]
+    sun_z = peak_z * 0.5 + sun_dist * max(0.05, sun_dir[2])
+    sun_sphere = pv.Sphere(radius=0.42, center=(sun_x, sun_y, sun_z), theta_resolution=24, phi_resolution=24)
+    
+    arc_points = []
+    for h_step in np.linspace(5.5, 18.5, 35):
+        s_alt, s_az, _ = calculate_solar_position(latitude, longitude, day_of_year, h_step)
+        if s_alt > 0.0:
+            s_vec = get_solar_vector(s_alt, s_az)
+            arc_points.append([cx + sun_dist * s_vec[0], cy + sun_dist * s_vec[1], peak_z * 0.5 + sun_dist * max(0.02, s_vec[2])])
+            
+    if len(arc_points) > 2:
+        arc_spline = pv.Spline(np.array(arc_points), n_points=70)
+        arc_tube = arc_spline.tube(radius=0.03)
+    else:
+        arc_tube = pv.PolyData()
+        
+    return sun_sphere, arc_tube, sun_dir, sol_alt, sol_az, is_daylight
+
+
+def build_ground_shadow_projection(geometry: ShelterGeometry, sun_dir: np.ndarray, sol_alt: float, cx: float, cy: float, peak_z: float) -> pv.PolyData:
+    if sol_alt < 4.0: return pv.PolyData()
+    L, W, H = geometry.length, geometry.width, peak_z
+    orientation = geometry.orientation
+    tan_alt = max(0.08, math.tan(math.radians(sol_alt)))
+    shd_len = H / tan_alt
+    shd_dx = -sun_dir[0] * shd_len
+    shd_dy = -sun_dir[1] * shd_len
+    bx, by, _ = rotate_points_z([0, L, L, 0], [0, 0, W, W], [0, 0, 0, 0], orientation, cx, cy)
+    pts = np.array([
+        [bx[0], by[0], 0.005],
+        [bx[1], by[1], 0.005],
+        [bx[1] + shd_dx, by[1] + shd_dy, 0.005],
+        [bx[2] + shd_dx, by[2] + shd_dy, 0.005],
+        [bx[3] + shd_dx, by[3] + shd_dy, 0.005],
+        [bx[0] + shd_dx, by[0] + shd_dy, 0.005],
+    ])
+    faces = np.array([3, 0, 1, 2, 3, 0, 2, 3, 3, 0, 3, 4, 3, 0, 4, 5])
+    return pv.PolyData(pts, faces=faces)
+
+
+# ==============================================================================
+# 5. MAIN PYVISTA 3D DIGITAL TWIN SCENE GENERATOR
+# ==============================================================================
+
+def create_pyvista_3d_shelter(
+    geometry: ShelterGeometry,
+    wall_mat: str = 'cseb_interlocking',
+    roof_mat: str = 'roof_cgi_insulated',
+    view_mode: str = 'architectural',
+    hour_of_day: float = 12.0,
+    solar_ghi: float = 850.0,
+    occupants: int = 4,
+    show_interior: bool = True,
+    latitude: float = 21.4669,
+    longitude: float = 83.9812,
+    day_of_year: int = 135,
+    wind_speed: float = 3.5,
+    wind_direction_deg: float = 225.0,
+    sim_results: Optional[Dict[str, Any]] = None,
+    exploded_offset: float = 0.0,
+    component_visibility: Optional[Dict[str, bool]] = None
+) -> pv.Plotter:
+    L = geometry.length
+    W = geometry.width
+    H = geometry.height
+    orientation = geometry.orientation
+    wall_thick = geometry.wall_thickness
+    wwr = geometry.wwr
+    
+    cx = L / 2.0
+    cy = W / 2.0
+    
+    vis = {
+        'roof': True, 'walls': True, 'windows': True, 'door': True,
+        'shading': True, 'ground': True, 'compass': True, 'sun_path': True, 'shadow': True,
+    }
+    if component_visibility: vis.update(component_visibility)
+        
+    plotter = pv.Plotter(window_size=[960, 580], lighting='none')
+    plotter.set_background('#0a0f18', top='#141f2e')
+    
+    wall_mesh, door_mesh, win_mesh, frame_mesh = build_parametric_walls(geometry=geometry, wall_thickness=wall_thick, wwr=wwr)
+    roof_mesh, shading_mesh, peak_z = build_parametric_roof(geometry=geometry, roof_thickness=0.08)
+    slab_mesh = create_box_mesh((-0.08, L + 0.08, -0.08, W + 0.08, -0.15, 0.0))
+    
+    sun_dist = max(12.0, max(L, W) * 2.2)
+    sun_mesh, arc_tube, sun_dir, sol_alt, sol_az, is_day = build_solar_path_and_sun(
+        latitude, longitude, day_of_year, hour_of_day, cx, cy, peak_z, sun_dist=sun_dist
+    )
+    
+    if is_day and sol_alt > 0.5:
+        sun_light = pv.Light(
+            position=(cx + sun_dist * sun_dir[0], cy + sun_dist * sun_dir[1], peak_z * 0.5 + sun_dist * sun_dir[2]),
+            focal_point=(cx, cy, H * 0.5), color='#fff8e7', intensity=0.95, positional=True
+        )
+        plotter.add_light(sun_light)
+        
+    ambient_light = pv.Light(position=(cx, cy, peak_z + 10.0), focal_point=(cx, cy, 0), color='#c8d6e5', intensity=0.45, positional=False)
+    plotter.add_light(ambient_light)
+    fill_light = pv.Light(position=(cx - 8.0, cy - 8.0, 4.0), focal_point=(cx, cy, H * 0.5), color='#7f8c8d', intensity=0.25, positional=True)
+    plotter.add_light(fill_light)
+    
+    wall_hex, roof_hex, wall_name, roof_name = get_material_colors(wall_mat, roof_mat)
+    wall_spec = MATERIAL_SPECS.get(str(wall_mat).lower(), {})
+    roof_spec = MATERIAL_SPECS.get(str(roof_mat).lower(), {})
+    
+    wall_z_off = exploded_offset * 0.4
+    roof_z_off = exploded_offset * 1.0
+    
+    wall_mesh_r = rotate_mesh_z(wall_mesh, orientation, cx, cy)
+    door_mesh_r = rotate_mesh_z(door_mesh, orientation, cx, cy)
+    win_mesh_r = rotate_mesh_z(win_mesh, orientation, cx, cy)
+    frame_mesh_r = rotate_mesh_z(frame_mesh, orientation, cx, cy)
+    roof_mesh_r = rotate_mesh_z(roof_mesh, orientation, cx, cy)
+    shading_mesh_r = rotate_mesh_z(shading_mesh, orientation, cx, cy)
+    slab_mesh_r = rotate_mesh_z(slab_mesh, orientation, cx, cy)
+    
+    if wall_z_off > 0:
+        for m in [wall_mesh_r, door_mesh_r, win_mesh_r, frame_mesh_r]:
+            if m.n_points > 0: m.translate((0, 0, wall_z_off), inplace=True)
+    if roof_z_off > 0:
+        for m in [roof_mesh_r, shading_mesh_r]:
+            if m.n_points > 0: m.translate((0, 0, roof_z_off), inplace=True)
+            
+    if view_mode == 'thermal_heatmap':
+        base_t = 30.0
+        if sim_results and 't_indoor' in sim_results:
+            h_idx = max(0, min(23, int(hour_of_day)))
+            base_t = sim_results['t_indoor'][h_idx]
+        wall_render_color, _ = calculate_surface_thermal_color(
+            normal_vector=np.array([math.cos(math.radians(orientation)), math.sin(math.radians(orientation)), 0]),
+            sun_vector=sun_dir, base_temp=base_t, max_ghi=solar_ghi
+        )
+        roof_render_color, _ = calculate_surface_thermal_color(
+            normal_vector=np.array([0, 0, 1]), sun_vector=sun_dir, base_temp=base_t + 2.0, max_ghi=solar_ghi
+        )
+    else:
+        wall_render_color = wall_hex
+        roof_render_color = roof_hex
+        
+    if vis.get('walls', True) and slab_mesh_r.n_points > 0:
+        plotter.add_mesh(slab_mesh_r, color='#2c3e50', smooth_shading=True, ambient=0.25, diffuse=0.85, specular=0.1)
+    if vis.get('walls', True) and wall_mesh_r.n_points > 0:
+        plotter.add_mesh(wall_mesh_r, color=wall_render_color, smooth_shading=True, ambient=wall_spec.get('ambient', 0.30), diffuse=wall_spec.get('diffuse', 0.85), specular=wall_spec.get('specular', 0.10))
+    if vis.get('roof', True) and roof_mesh_r.n_points > 0:
+        plotter.add_mesh(roof_mesh_r, color=roof_render_color, smooth_shading=True, ambient=roof_spec.get('ambient', 0.25), diffuse=roof_spec.get('diffuse', 0.75), specular=roof_spec.get('specular', 0.35))
+    if vis.get('shading', True) and shading_mesh_r.n_points > 0:
+        plotter.add_mesh(shading_mesh_r, color='#1abc9c', smooth_shading=True, ambient=0.3, diffuse=0.8, specular=0.2)
+    if vis.get('door', True) and door_mesh_r.n_points > 0:
+        plotter.add_mesh(door_mesh_r, color='#5d4037', smooth_shading=True, ambient=0.3, diffuse=0.85, specular=0.2)
+    if vis.get('windows', True) and win_mesh_r.n_points > 0:
+        plotter.add_mesh(win_mesh_r, color='#38bdf8', opacity=0.65, smooth_shading=True, ambient=0.4, diffuse=0.6, specular=0.9)
+    if vis.get('windows', True) and frame_mesh_r.n_points > 0:
+        plotter.add_mesh(frame_mesh_r, color='#1e293b', smooth_shading=True, ambient=0.3, diffuse=0.7, specular=0.3)
+        
+    ground_rad = max(10.0, max(L, W) * 1.6)
+    ground_disc, ground_grid, compass_mesh = build_ground_and_compass(L, W, cx, cy, radius=ground_rad)
+    if vis.get('ground', True):
+        plotter.add_mesh(ground_disc, color='#0f172a', smooth_shading=True, ambient=0.35, diffuse=0.65, specular=0.05)
+        if ground_grid.n_points > 0:
+            plotter.add_mesh(ground_grid, color='#1e293b', line_width=1.5, opacity=0.6)
+    if vis.get('compass', True) and compass_mesh.n_points > 0:
+        plotter.add_mesh(compass_mesh, color='#e74c3c', smooth_shading=True, ambient=0.4, diffuse=0.8)
+        
+    if vis.get('sun_path', True):
+        if is_day and sun_mesh.n_points > 0:
+            plotter.add_mesh(sun_mesh, color='#f1c40f', ambient=1.0, diffuse=0.0, specular=0.0)
+        if arc_tube.n_points > 0:
+            plotter.add_mesh(arc_tube, color='#e67e22', opacity=0.75, ambient=0.6)
+            
+    if vis.get('shadow', True) and is_day and sol_alt > 5.0 and exploded_offset == 0.0:
+        shadow_mesh = build_ground_shadow_projection(geometry, sun_dir, sol_alt, cx, cy, peak_z)
+        if shadow_mesh.n_points > 0:
+            plotter.add_mesh(shadow_mesh, color='#020617', opacity=0.70, smooth_shading=True)
+            
+    if view_mode == 'ventilation':
+        w_rad = math.radians(wind_direction_deg)
+        w_vec = np.array([math.sin(w_rad), math.cos(w_rad), 0.0])
+        arrow_scale = max(1.5, min(4.5, wind_speed * 0.8))
+        y_offsets = np.linspace(-W * 0.35, W * 0.35, 3)
+        for dy in y_offsets:
+            start_pt = np.array([cx - w_vec[0] * 5.0, cy + dy - w_vec[1] * 5.0, H * 0.45])
+            mid_pt = np.array([cx, cy + dy * 0.5, H * 0.45])
+            end_pt = np.array([cx + w_vec[0] * 5.0, cy + dy * 0.5 + w_vec[1] * 5.0, H * 0.45])
+            stream_spline = pv.Spline(np.array([start_pt, mid_pt, end_pt]), n_points=30)
+            plotter.add_mesh(stream_spline.tube(radius=0.06), color='#00e5ff', opacity=0.85, ambient=0.5)
+            entry_arr = pv.Arrow(start=start_pt, direction=w_vec, scale=arrow_scale * 0.6)
+            exit_arr = pv.Arrow(start=end_pt - w_vec * (arrow_scale * 0.6), direction=w_vec, scale=arrow_scale * 0.6)
+            plotter.add_mesh(entry_arr, color='#00e5ff', ambient=0.6)
+            plotter.add_mesh(exit_arr, color='#00b4d8', ambient=0.6)
+    elif view_mode == 'solar_shading' and is_day:
+        beam = pv.Line((cx + sun_dist * 0.9 * sun_dir[0], cy + sun_dist * 0.9 * sun_dir[1], peak_z * 0.5 + sun_dist * 0.9 * sun_dir[2]), (cx, cy, peak_z * 0.8))
+        plotter.add_mesh(beam.tube(radius=0.04), color='#f39c12', opacity=0.85, ambient=0.8)
+        
+    plotter.camera_position = [(cx + max(L, W) * 2.2, cy - max(L, W) * 2.2, peak_z * 1.8), (cx, cy, H * 0.4), (0, 0, 1)]
+    return plotter
+
+
+# ==============================================================================
+# 6. CAMERA PRESETS
+# ==============================================================================
+
+def set_pyvista_camera_preset(plotter: pv.Plotter, preset_name: str, geometry: ShelterGeometry):
+    L, W, H = geometry.length, geometry.width, geometry.height
+    cx, cy = L / 2.0, W / 2.0
+    focal = (cx, cy, H * 0.4)
+    dist = max(L, W) * 2.6
+    
+    if preset_name == 'Front (South)':
+        plotter.camera_position = [(cx, cy - dist, H * 0.5), focal, (0, 0, 1)]
+    elif preset_name == 'Side (East)':
+        plotter.camera_position = [(cx + dist, cy, H * 0.5), focal, (0, 0, 1)]
+    elif preset_name == 'Top (Plan)':
+        plotter.camera_position = [(cx, cy, dist * 1.2), focal, (0, 1, 0)]
+    elif preset_name == 'North Elevation':
+        plotter.camera_position = [(cx, cy + dist, H * 0.5), focal, (0, 0, 1)]
+    else:  # Isometric
+        plotter.camera_position = [(cx + dist * 0.8, cy - dist * 0.8, H * 1.6), focal, (0, 0, 1)]
+
+
+def get_camera_preset_dict(preset_name: str) -> Dict[str, Any]:
+    presets = {
+        'Isometric': dict(eye=dict(x=1.65, y=-1.65, z=1.25), center=dict(x=0, y=0, z=0), up=dict(x=0, y=0, z=1)),
+        'Front (South)': dict(eye=dict(x=0.0, y=-2.5, z=0.4), center=dict(x=0, y=0, z=0), up=dict(x=0, y=0, z=1)),
+        'Side (East)': dict(eye=dict(x=2.5, y=0.0, z=0.4), center=dict(x=0, y=0, z=0), up=dict(x=0, y=0, z=1)),
+        'Top (Plan)': dict(eye=dict(x=0.0, y=0.0, z=3.0), center=dict(x=0, y=0, z=0), up=dict(x=0, y=1, z=0)),
+        'North Elevation': dict(eye=dict(x=0.0, y=2.5, z=0.4), center=dict(x=0, y=0, z=0), up=dict(x=0, y=0, z=1)),
+    }
+    return presets.get(preset_name, presets['Isometric'])
+
+
+# ==============================================================================
+# 7. STREAMLIT PYVISTA RENDERER
+# ==============================================================================
+
+def render_pyvista_3d_shelter(plotter: pv.Plotter, height: int = 580):
+    html_content = None
+    try:
+        with tempfile.NamedTemporaryFile(suffix='.html', delete=False) as tmp_file:
+            tmp_path = tmp_file.name
+        plotter.export_html(tmp_path)
+        with open(tmp_path, 'r', encoding='utf-8') as f:
+            html_content = f.read()
+        try: os.remove(tmp_path)
+        except Exception: pass
+    except Exception:
+        html_content = None
+
+    if html_content:
+        components.html(html_content, height=height, scrolling=False)
+    else:
+        try:
+            img = plotter.screenshot(return_img=True)
+            st.image(img, use_container_width=True)
+        except Exception:
+            st.warning('3D WebGL renderer unavailable.')
+
+
+# ==============================================================================
+# 8. BACKWARD COMPATIBILITY: PLOTLY 3D GENERATOR
+# ==============================================================================
+
+def create_plotly_3d_shelter(
+    geometry: ShelterGeometry,
+    wall_mat: str = 'cseb_interlocking',
+    roof_mat: str = 'roof_cgi_insulated',
+    view_mode: str = 'architectural',
+    hour_of_day: float = 12.0,
+    solar_ghi: float = 850.0,
+    occupants: int = 4,
+    show_interior: bool = True,
+    latitude: float = 21.4669,
+    longitude: float = 83.9812,
+    day_of_year: int = 135,
+    wind_speed: float = 3.5,
+    wind_direction_deg: float = 225.0,
+    sim_results: Optional[Dict[str, Any]] = None,
+    exploded_offset: float = 0.0
+) -> go.Figure:
+    L = geometry.length
+    W = geometry.width
+    H = geometry.height
+    orientation = geometry.orientation
+    cx = L / 2.0
+    cy = W / 2.0
+    
+    sol_alt, sol_az, is_daytime = calculate_solar_position(latitude, longitude, day_of_year, hour_of_day)
+    sun_dir = get_solar_vector(sol_alt, sol_az)
+    wall_color, roof_color, wall_label, roof_label = get_material_colors(wall_mat, roof_mat)
+    
+    fig = go.Figure()
+    margin = max(L, W) * 0.9
+    gx = [-margin, L + margin, L + margin, -margin]
+    gy = [-margin, -margin, W + margin, W + margin]
+    gz = [-0.1, -0.1, -0.1, -0.1]
+    fig.add_trace(go.Mesh3d(x=gx, y=gy, z=gz, i=[0, 0], j=[1, 2], k=[2, 3], color='#0f172a', opacity=0.9, name='Ground Plane'))
+    
+    wx = [0, L, L, 0, 0, L, L, 0]
+    wy = [0, 0, W, W, 0, 0, W, W]
+    wz = [0, 0, 0, 0, H, H, H, H]
+    r_wx, r_wy, r_wz = rotate_points_z(wx, wy, wz, orientation, cx, cy)
+    fig.add_trace(go.Mesh3d(
+        x=r_wx, y=r_wy, z=r_wz,
+        i=[7, 0, 0, 0, 4, 4, 6, 6, 4, 0, 3, 2],
+        j=[3, 4, 1, 2, 5, 6, 5, 2, 0, 1, 6, 3],
+        k=[0, 7, 2, 3, 6, 7, 1, 1, 5, 5, 7, 6],
+        color=wall_color, opacity=0.85, name=f'Walls ({wall_label})'
+    ))
+    
+    delta_h = geometry.roof_height_delta()
+    roof_peak_z = H + delta_h
+    overhang = geometry.overhang
+    rx = [-overhang, L + overhang, L + overhang, -overhang, -overhang, L + overhang]
+    ry = [-overhang, -overhang, W + overhang, W + overhang, cy, cy]
+    rz = [H, H, H, H, roof_peak_z, roof_peak_z]
+    r_rx, r_ry, r_rz = rotate_points_z(rx, ry, rz, orientation, cx, cy)
+    
+    fig.add_trace(go.Mesh3d(
+        x=r_rx, y=r_ry, z=r_rz,
+        i=[0, 1, 3, 2], j=[1, 5, 2, 4], k=[4, 4, 4, 5],
+        color=roof_color, opacity=0.9, name=f'Roof ({roof_label})'
+    ))
+    
+    sun_dist = max(L, W) * 2.0
+    sun_x = cx + sun_dist * sun_dir[0]
+    sun_y = cy + sun_dist * sun_dir[1]
+    sun_z = roof_peak_z + sun_dist * max(0.05, sun_dir[2])
+    
     if is_daytime:
-        # Sunbeam ray targeting roof center
-        fig.add_trace(go.Scatter3d(
-            x=[sun_x, L / 2.0], y=[sun_y, W / 2.0], z=[sun_z, roof_top_z],
-            mode="lines", name=f"Sun Ray ({solar_ghi:.0f} W/m²)",
-            line=dict(color="#f39c12", width=5, dash="dot")
-        ))
-        # Glowing Sun sphere
         fig.add_trace(go.Scatter3d(
             x=[sun_x], y=[sun_y], z=[sun_z],
-            mode="markers+text", name=f"Sun Position ({hour_clamped}:00)",
-            marker=dict(size=14, color="#f1c40f", symbol="circle"),
-            text=[f"☀️ {hour_clamped}:00 ({sol_altitude_deg:.0f}° Alt)"],
-            textposition="top center"
+            mode='markers+text', name='Sun Position',
+            marker=dict(size=12, color='#f1c40f')
         ))
-
-    # Diurnal Sun Trajectory Arc
-    arc_hours = np.linspace(6, 18, 25)
+        
     arc_xs, arc_ys, arc_zs = [], [], []
-    for h in arc_hours:
-        ha = (h - 12) * 15.0
-        alt = max(5.0, 90.0 - abs(ha * 1.1))
-        az = (orientation + ha) % 360.0
-        dx = np.cos(np.radians(alt)) * np.cos(np.radians(az))
-        dy = np.cos(np.radians(alt)) * np.sin(np.radians(az))
-        dz = np.sin(np.radians(alt))
-        arc_xs.append(L/2.0 + sun_dist * dx)
-        arc_ys.append(W/2.0 + sun_dist * dy)
-        arc_zs.append(roof_top_z + sun_dist * dz)
-
+    for h_step in np.linspace(6.0, 18.0, 20):
+        s_alt, s_az, _ = calculate_solar_position(latitude, longitude, day_of_year, h_step)
+        if s_alt > 0.0:
+            s_vec = get_solar_vector(s_alt, s_az)
+            arc_xs.append(cx + sun_dist * s_vec[0])
+            arc_ys.append(cy + sun_dist * s_vec[1])
+            arc_zs.append(roof_peak_z + sun_dist * max(0.05, s_vec[2]))
+            
     fig.add_trace(go.Scatter3d(
         x=arc_xs, y=arc_ys, z=arc_zs,
-        mode="lines", name="Diurnal Sun Arc (6h-18h)",
-        line=dict(color="#f39c12", width=3, dash="dash")
+        mode='lines', name='Diurnal Solar Path',
+        line=dict(color='#e67e22', width=3, dash='dash')
     ))
-
-    # 8. BLUEPRINT DIMENSION ANNOTATIONS
-    fig.add_trace(go.Scatter3d(
-        x=[0, L], y=[-0.6, -0.6], z=[0, 0],
-        mode="lines+text", name="Dimensions",
-        line=dict(color="#e74c3c", width=4),
-        text=["", f"Length: {L:.1f}m"], textposition="bottom center", showlegend=False
-    ))
-    fig.add_trace(go.Scatter3d(
-        x=[-0.6, -0.6], y=[0, W], z=[0, 0],
-        mode="lines+text",
-        line=dict(color="#e74c3c", width=4),
-        text=["", f"Width: {W:.1f}m"], textposition="bottom center", showlegend=False
-    ))
-    fig.add_trace(go.Scatter3d(
-        x=[-0.6, -0.6], y=[-0.6, -0.6], z=[0, H],
-        mode="lines+text",
-        line=dict(color="#e74c3c", width=4),
-        text=["", f"Height: {H:.1f}m"], textposition="top center", showlegend=False
-    ))
-
-    # 9. LAYOUT & CAMERA VIEWPORT
-    mode_title = "🌡️ Thermal Sol-Air Heatmap" if view_mode == "thermal_heatmap" else "🏢 Architectural Model"
     
     fig.update_layout(
         scene=dict(
-            xaxis=dict(title="Length X (m)", gridcolor="#333", backgroundcolor="#111827", zerolinecolor="#555"),
-            yaxis=dict(title="Width Y (m)", gridcolor="#333", backgroundcolor="#111827", zerolinecolor="#555"),
-            zaxis=dict(title="Height Z (m)", gridcolor="#333", backgroundcolor="#111827", zerolinecolor="#555"),
-            camera=dict(
-                eye=dict(x=1.75, y=-1.75, z=1.35),
-                center=dict(x=0, y=0, z=0),
-                up=dict(x=0, y=0, z=1)
-            ),
-            aspectmode="data"
+            xaxis=dict(showgrid=False, zeroline=False, showticklabels=False, title=''),
+            yaxis=dict(showgrid=False, zeroline=False, showticklabels=False, title=''),
+            zaxis=dict(showgrid=False, zeroline=False, showticklabels=False, title=''),
+            camera=dict(eye=dict(x=1.65, y=-1.65, z=1.25)),
+            aspectmode='data'
         ),
-        title=dict(
-            text=f"{mode_title} | {L}m × {W}m × {H}m (Floor: {geometry.floor_area()}m² | Vol: {geometry.volume()}m³)",
-            font=dict(size=15, color="#2ecc71")
-        ),
-        margin=dict(l=10, r=10, t=40, b=10),
-        template="plotly_dark",
-        legend=dict(x=0.02, y=0.98, bgcolor="rgba(0,0,0,0.65)")
+        margin=dict(l=5, r=5, t=25, b=5),
+        template='plotly_dark'
     )
-
     return fig
