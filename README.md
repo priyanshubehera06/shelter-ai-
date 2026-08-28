@@ -1,101 +1,124 @@
-# Shelter-AI: Area-Specific Passive Shelter Optimization & Thermal Performance Engine
+# SHELTER-AI — Intelligent Climate-Adaptive Shelter Platform
 
-**Shelter-AI** is an advanced physics-driven application designed for area-specific passive thermal shelter engineering, climate dynamic analysis, embodied carbon accounting, multi-objective Pareto optimization, and automated PDF BOQ audit reports.
+> **Platform Mission:** *"Software Based Model Development for Design of Area Specific Shelter for Thermal Comfort Maintenance."*
+
+SHELTER-AI is a physics-informed, multi-physics building design and decision-support platform. It analyzes local meteorological conditions and generates optimized, climate-responsive shelter designs based on parametric geometry, envelope materials, thermal mass, astronomical solar tracking, natural ventilation, ASHRAE 55 PMV comfort, operational HVAC energy, construction CapEx, and multi-objective evolutionary optimization.
 
 ---
 
-## 📁 Directory Architecture
+## 🏛️ System Architecture
 
 ```
-shelter-ai/
-│
-├── app.py                      # Streamlit multi-page portal entry point & state setup
-│
-├── pages/                      # Multi-page Streamlit views
-│   ├── 01_Home.py              # Landing page, quick start presets & feature roadmaps
-│   ├── 02_Climate_Analysis.py  # Diurnal weather dynamics, psychrometrics & solar GHI
-│   ├── 03_Shelter_Design.py    # 3D parametric blueprint builder & 24h thermal simulator
-│   ├── 04_Optimization.py      # Multi-Objective Pareto trade-off solver
-│   └── 05_Results.py           # 5-Pillar MCDA sustainability score & PDF report exporter
-│
-├── engine/                     # Core computational & physics modules
-│   ├── climate.py              # Climate data processing & psychrometric calculations
-│   ├── materials.py            # Material database, U-value & thermal mass math
-│   ├── geometry.py             # Building envelope surface area & shading geometry
-│   ├── thermal.py              # 2-Node dynamic RC thermal dynamic differential solver
-│   ├── comfort.py              # Fanger PMV/PPD (ISO 7730) & ASHRAE 55 Adaptive Comfort
-│   ├── energy.py              # Thermal energy demand (kWh/m²/yr) & load savings
-│   ├── cost.py                 # Bill of Quantities (BOQ), CapEx, OpEx & Life-Cycle Cost
-│   ├── optimizer.py            # Multi-objective Pareto optimization engine
-│   └── scoring.py              # 5-Pillar MCDA sustainability rating system
-│
-├── database/                   # Relational data layer
-│   ├── schema.sql              # SQLite database schema
-│   ├── seed.py                 # Database initialization & seeding script
-│   └── shelter.db              # SQLite persistent store
-│
-├── data/                       # Datasets
-│   ├── climate/                # Micro-climate records
-│   │   └── sambalpur.csv       # Sambalpur, Odisha composite weather dataset
-│   └── materials.csv           # Thermo-physical properties catalog of local materials
-│
-├── visualization/              # Graphics & rendering
-│   ├── charts.py               # Interactive Plotly charts (diurnal, Pareto, radar)
-│   └── shelter_3d.py           # 3D parametric shelter mesh renderer (PyDeck & Plotly 3D)
-│
-├── reports/                    # Document generation
-│   └── report_generator.py     # Executive PDF engineering report builder (FPDF2)
-│
-├── tests/                      # Automated test suite
-│   └── test_thermal.py         # Pytest verification for thermal physics & optimizer
-│
-├── requirements.txt            # Python dependencies
-└── README.md                   # System documentation
+                    SHELTER-AI FULL-STACK PLATFORM
+
+┌────────────────────────────────────────────────────────────────────────┐
+│                   REACT + TYPESCRIPT + VITE (SPA)                      │
+│                                                                        │
+│  01. Overview         02. Location Setup     03. Climate Intelligence │
+│  04. Design Lab       05. 3D Digital Twin    06. Optimization (NSGA-II)│
+│  07. What-If Lab      08. Results & XAI Audit                          │
+│                                                                        │
+│          Three.js / React Three Fiber / @react-three/drei              │
+└───────────────────────────────────┬────────────────────────────────────┘
+                                    │
+                           REST API (JSON & PDF)
+                                    │
+┌───────────────────────────────────▼────────────────────────────────────┐
+│                         FASTAPI REST BACKEND                           │
+│                                                                        │
+│  /api/climate         /api/designs           /api/materials            │
+│  /api/simulation      /api/optimization      /api/digital-twin         │
+│  /api/results         /api/health                                      │
+└───────────────────────────────────┬────────────────────────────────────┘
+                                    │
+┌───────────────────────────────────▼────────────────────────────────────┐
+│                    PYTHON PHYSICS & CAD ENGINE                         │
+│                     (Engine Source of Truth)                           │
+│                                                                        │
+│  • geometry.py         • climate.py           • materials.py           │
+│  • thermal.py          • comfort.py           • energy.py              │
+│  • cost.py             • optimizer.py         • scoring.py             │
+│  • explainability.py   • extreme_analysis.py  • geolocation.py         │
+└───────────────────────────────────┬────────────────────────────────────┘
+                                    │
+┌───────────────────────────────────▼────────────────────────────────────┐
+│                         DATA & METEOROLOGY                             │
+│                                                                        │
+│  • data/materials.csv  • data/sample_designs.json • database/shelter.db│
+└────────────────────────────────────────────────────────────────────────┘
 ```
 
 ---
 
-## ⚡ Quick Start
+## 🚀 Quickstart & Local Development
 
-### 1. Installation
-Install required dependencies:
+### 1. Prerequisites
+- Python 3.10+
+- Node.js 18+ and npm
+
+### 2. Backend Setup & Run (FastAPI)
 ```bash
+# 1. Install Python requirements
 pip install -r requirements.txt
-```
 
-### 2. Database Initialization
-Seed the SQLite database with material thermo-physical properties and baseline shelter presets:
-```bash
-python database/seed.py
+# 2. Run the FastAPI development server
+uvicorn backend.main:app --reload --port 8000
 ```
+- **API Documentation (Swagger UI):** [http://localhost:8000/docs](http://localhost:8000/docs)
+- **API Health Check:** [http://localhost:8000/api/health](http://localhost:8000/api/health)
 
-### 3. Run Unit Tests
-Verify physics equations and optimization solvers:
+### 3. Frontend Setup & Run (React + Vite)
 ```bash
-python tests/test_thermal.py
-```
+cd frontend
 
-### 4. Launch Web Application
-Run the multi-page Streamlit portal:
-```bash
-streamlit run app.py
+# 1. Install dependencies
+npm install
+
+# 2. Start the Vite development server
+npm run dev
 ```
+- **Web Application URL:** [http://localhost:5173](http://localhost:5173)
 
 ---
 
-## 🔬 Mathematical Physics & Formulas
+## 📡 REST API Reference
 
-1. **Overall Heat Transfer Coefficient (U-Value)**:
-   $$R_{\text{total}} = R_{si} + \sum \frac{d_i}{k_i} + R_{se}, \quad U = \frac{1}{R_{\text{total}}}$$
+| Endpoint | Method | Description |
+|---|---|---|
+| `/api/health` | `GET` | Health check & engine status verification |
+| `/api/climate/locations` | `GET` | List all cataloged Indian meteorological stations |
+| `/api/climate/analyze/{location_id}` | `GET` | 24-hr diurnal weather profile, extreme scenarios, and psychrometrics |
+| `/api/materials` | `GET` | Envelope catalog (CSEB, brick, AAC, sandwich panels, thatch, CGI) |
+| `/api/materials/u-value` | `POST` | Layered assembly $U$-value, $R$-value, and thermal mass computation |
+| `/api/designs` | `GET` | Baseline pre-configured shelter archetypes |
+| `/api/designs/metrics` | `POST` | Parametric geometric and surface envelope metrics |
+| `/api/simulation/run` | `POST` | 24-hr transient RC thermal simulation, PMV comfort, energy & cost |
+| `/api/simulation/what-if` | `POST` | Side-by-side baseline vs modified retrofit comparator |
+| `/api/optimization/run` | `POST` | NSGA-II multi-objective Pareto search (Comfort vs Cost vs Carbon) |
+| `/api/digital-twin/config` | `POST` | 3D bounding geometry, NOAA solar trajectory & Sol-Air scalar fields |
+| `/api/results/explain` | `POST` | Transparent Explainable AI rationale narratives |
+| `/api/results/pdf` | `POST` | Downloadable certified PDF engineering audit report |
 
-2. **Sol-Air Temperature ($T_{\text{sol-air}}$)**:
-   $$T_{\text{sol-air}} = T_{\text{outdoor}} + \frac{\alpha \cdot GHI}{h_o}$$
+---
 
-3. **Fanger PMV Thermal Comfort Index**:
-   $$PMV = [0.303 \cdot e^{-0.036 \cdot M} + 0.028] \cdot (M - W - H_{\text{loss}})$$
+## 🌐 3D Digital Twin Architecture (React Three Fiber)
 
-4. **ASHRAE 55 Adaptive Comfort Temperature**:
-   $$T_{\text{comfort}} = 17.8 + 0.31 \cdot T_{\text{outdoor, mean}}$$
+1. **Hardware-Accelerated WebGL Rendering**: Driven by React Three Fiber and Three.js with soft shadows, PBR roughness/metalness materials, and OrbitControls.
+2. **Astronomical Solar Tracking**: NOAA solar altitude and azimuth calculations place directional sunlight and diurnal spline trajectory arcs precisely matching local coordinates and time of day.
+3. **Multi-Physics View Modes**:
+   - **Architectural**: Realistic textures and finishes.
+   - **Solar & Shading**: Directional solar beams and overhang shading projections.
+   - **Thermal Heatmap**: Sol-Air scalar temperature gradients ($T_{\text{out}} + \alpha \cdot GHI / h_o$).
+   - **Passive Ventilation**: Streamline airflow tubes through envelope openings.
+   - **Exploded Assembly**: Parametric vertical layer separation for plinth, walls, and roof.
+4. **Camera Presets**: `Isometric`, `Front (South)`, `Side (East)`, `Top (Plan)`, `North Elevation`.
 
-5. **20-Year Life Cycle Cost (LCC)**:
-   $$\text{LCC} = \text{CapEx} + \sum_{t=1}^{20} \frac{\text{OpEx}_t}{(1 + r)^t}$$
+---
+
+## 🧪 Testing
+
+Run both the engine test suite and FastAPI API integration tests:
+```bash
+python -m pytest tests/ backend/tests/
+```
+All **75 tests** pass with 100% numerical consistency.
