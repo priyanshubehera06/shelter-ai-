@@ -18,5 +18,13 @@ dependencies = [
     "requests>=2.31.0"
 ]
 
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["backend*", "engine*", "api*"]
+exclude = ["tests*", "frontend*", "node_modules*"]
+
+[tool.setuptools.package-data]
+"*" = ["*.csv", "*.json", "*.md"]
+
 [tool.vercel]
 entrypoint = "backend.main:app"
