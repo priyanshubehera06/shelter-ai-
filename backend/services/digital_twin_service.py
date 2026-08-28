@@ -8,7 +8,7 @@ import numpy as np
 from engine.geometry import ShelterGeometry
 from engine.materials import get_material_by_id, calculate_assembly_u_value
 from engine.climate import get_climate_profile
-from visualization.shelter_3d import calculate_solar_position, get_solar_vector, calculate_surface_thermal_color
+from engine.solar import calculate_solar_position, get_solar_vector, calculate_surface_thermal_color
 from backend.services.climate_service import get_location_by_id
 from backend.schemas.digital_twin import (
     DigitalTwinConfigRequest,
