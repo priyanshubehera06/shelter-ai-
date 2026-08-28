@@ -11,10 +11,16 @@ import {
   SimulationResponse,
   WhatIfCompareResponse,
   OptimizationResponse,
-  DigitalTwinConfigResponse
+  DigitalTwinConfigResponse,
+  AllStatesTVIResponse,
+  StateTVI,
+  RecommendationResponse,
+  ComplianceCheckResponse
 } from '../types';
 
+// -------------------------------------------------------------
 // Climate APIs
+// -------------------------------------------------------------
 export const fetchLocations = async (): Promise<LocationInfo[]> => {
   const { data } = await apiClient.get<LocationInfo[]>('/climate/locations');
   return data;
@@ -30,14 +36,81 @@ export const fetchClimateAnalysis = async (locationId: string, month: number = 5
   return data;
 };
 
-// Materials APIs
+// -------------------------------------------------------------
+// Thermal Vulnerability Index (TVI) APIs
+// -------------------------------------------------------------
+export const fetchAllThermalVulnerability = async (weights?: Record<string, number>): Promise<AllStatesTVIResponse> => {
+  const params = weights ? {
+    w_heat_exposure: weights.heat_exposure,
+    w_extreme_heat: weights.extreme_heat,
+    w_thermal_stress: weights.thermal_stress,
+    w_cooling_burden: weights.cooling_burden,
+    w_pop_vuln: weights.population_vulnerability,
+    w_bldg_vuln: weights.building_vulnerability,
+    w_adaptive_cap: weights.adaptive_capacity,
+  } : {};
+  const { data } = await apiClient.get<AllStatesTVIResponse>('/thermal-vulnerability', { params });
+  return data;
+};
+
+export const fetchStateThermalVulnerability = async (stateName: string, weights?: Record<string, number>): Promise<StateTVI> => {
+  const params = weights ? {
+    w_heat_exposure: weights.heat_exposure,
+    w_extreme_heat: weights.extreme_heat,
+    w_thermal_stress: weights.thermal_stress,
+    w_cooling_burden: weights.cooling_burden,
+    w_pop_vuln: weights.population_vulnerability,
+    w_bldg_vuln: weights.building_vulnerability,
+    w_adaptive_cap: weights.adaptive_capacity,
+  } : {};
+  const { data } = await apiClient.get<StateTVI>(`/thermal-vulnerability/${encodeURIComponent(stateName)}`, { params });
+  return data;
+};
+
+// -------------------------------------------------------------
+// Materials & Recommendation APIs
+// -------------------------------------------------------------
 export const fetchMaterials = async (category?: string): Promise<MaterialItem[]> => {
   const url = category ? `/materials?category=${category}` : '/materials';
   const { data } = await apiClient.get<MaterialItem[]>(url);
   return data;
 };
 
+export const fetchEngineeringRecommendations = async (payload: {
+  climate_zone?: string;
+  state_code?: string;
+  budget_level?: string;
+  shelter_type?: string;
+  disaster_mode?: string | null;
+  rapid_deployment_needed?: boolean;
+  weights?: Record<string, number>;
+}): Promise<RecommendationResponse> => {
+  const { data } = await apiClient.post<RecommendationResponse>('/recommendations/run', payload);
+  return data;
+};
+
+// -------------------------------------------------------------
+// Policy & Compliance APIs
+// -------------------------------------------------------------
+export const checkPolicyCompliance = async (payload: {
+  state_name: string;
+  building_type?: string;
+  geometry: GeometryParams;
+  materials: MaterialSelection;
+  simulation_metrics?: Record<string, any>;
+}): Promise<ComplianceCheckResponse> => {
+  const { data } = await apiClient.post<ComplianceCheckResponse>('/compliance/check', payload);
+  return data;
+};
+
+export const fetchStateRegulations = async (stateName: string): Promise<any> => {
+  const { data } = await apiClient.get(`/compliance/regulations/${encodeURIComponent(stateName)}`);
+  return data;
+};
+
+// -------------------------------------------------------------
 // Designs & Geometry APIs
+// -------------------------------------------------------------
 export const fetchDesigns = async (): Promise<ShelterDesign[]> => {
   const { data } = await apiClient.get<ShelterDesign[]>('/designs');
   return data;
@@ -55,13 +128,16 @@ export const fetchStructuralMetrics = async (
   return data;
 };
 
+// -------------------------------------------------------------
 // Simulation APIs
+// -------------------------------------------------------------
 export const runSimulation = async (payload: {
   location_id?: string;
   month?: number;
   geometry: GeometryParams;
   materials: MaterialSelection;
   occupants?: number;
+  thermal_mass_level?: string;
 }): Promise<SimulationResponse> => {
   const { data } = await apiClient.post<SimulationResponse>('/simulation/run', payload);
   return data;
@@ -79,7 +155,9 @@ export const runWhatIfComparison = async (payload: {
   return data;
 };
 
+// -------------------------------------------------------------
 // Optimization APIs
+// -------------------------------------------------------------
 export const runOptimization = async (payload: {
   location_id?: string;
   month?: number;
@@ -92,7 +170,9 @@ export const runOptimization = async (payload: {
   return data;
 };
 
+// -------------------------------------------------------------
 // Digital Twin APIs
+// -------------------------------------------------------------
 export const fetchDigitalTwinConfig = async (payload: {
   geometry: GeometryParams;
   materials: MaterialSelection;
@@ -105,7 +185,9 @@ export const fetchDigitalTwinConfig = async (payload: {
   return data;
 };
 
+// -------------------------------------------------------------
 // Explainability & PDF
+// -------------------------------------------------------------
 export const fetchExplanation = async (design: ShelterDesign): Promise<{ explanation: string }> => {
   const { data } = await apiClient.post<{ explanation: string }>('/results/explain', design);
   return data;

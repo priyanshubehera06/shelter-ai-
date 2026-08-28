@@ -1,0 +1,27 @@
+{
+  "state_name": "West Bengal",
+  "state_code": "WB",
+  "governing_document": "KMC Building Rules & West Bengal Municipal (Building) Rules",
+  "authority": "Municipal Affairs Department, Govt of West Bengal",
+  "effective_date": "2015-08-10",
+  "last_verified": "2025-06-12",
+  "status": "verified",
+  "source_url": "https://www.kmcgov.in/",
+  "climate_adaptations": [
+    "Warm & Humid monsoon ventilation and delta region waterlogging resilience."
+  ],
+  "rules": [
+    {
+      "id": "WB_PLINTH_CLEARANCE",
+      "category": "Flood & Plinth Height",
+      "clause": "Rule 50 - Plinth Level",
+      "parameter": "plinth_height_m",
+      "operator": ">=",
+      "min_limit": 0.50,
+      "units": "meters",
+      "description": "Finished plinth level must be at least 0.50 m above street level in flood-vulnerable municipal wards.",
+      "failure_severity": "FAIL",
+      "remediation": "Elevate base plinth by minimum 0.50 m."
+    }
+  ]
+}

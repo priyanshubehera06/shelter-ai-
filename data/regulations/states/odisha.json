@@ -1,0 +1,52 @@
+{
+  "state_name": "Odisha",
+  "state_code": "OD",
+  "governing_document": "Odisha Development Authorities (Planning & Building Standards) Rules & Odisha ECBC Notification",
+  "authority": "Housing & Urban Development Department, Govt of Odisha / ODA",
+  "effective_date": "2020-07-15",
+  "last_verified": "2025-11-20",
+  "status": "verified",
+  "source_url": "http://urbanodisha.gov.in/",
+  "climate_adaptations": [
+    "Cyclonic wind protection measures in coastal districts (Puri, Ganjam, Jagatsinghpur, Kendrapara, Balasore, Bhadrak).",
+    "Heatwave action plan mandated cool roofs for public and low-income housing.",
+    "Mandatory minimum plinth height of 450mm above crown of adjacent road."
+  ],
+  "rules": [
+    {
+      "id": "OD_PLINTH_HEIGHT",
+      "category": "Plinth Height & Flood Protection",
+      "clause": "Rule 24(1) - Minimum Plinth Height",
+      "parameter": "plinth_height_m",
+      "operator": ">=",
+      "min_limit": 0.45,
+      "units": "meters",
+      "description": "Ground floor plinth must be at least 0.45 m (450 mm) above surrounding finished ground level to prevent waterlogging and seasonal inundation.",
+      "failure_severity": "FAIL",
+      "remediation": "Elevate ground slab or foundation grade beam to minimum 0.45m."
+    },
+    {
+      "id": "OD_CYCLONE_ROOF_ANCHOR",
+      "category": "Cyclone Resilience / Roof Anchor",
+      "clause": "Rule 76 - Disaster Resilient Construction Guidelines",
+      "parameter": "cyclone_anchoring_verified",
+      "operator": "==",
+      "expected_value": true,
+      "description": "Lightweight or pitched metal/tile roofs in coastal zones must incorporate J-bolt hurricane tie anchors at max 1.2m intervals connected into RCC tie beams.",
+      "failure_severity": "REVIEW",
+      "remediation": "Verify positive mechanical hurricane tie anchorage between roof trusses and perimeter wall bond beams."
+    },
+    {
+      "id": "OD_COOL_ROOF_SRI",
+      "category": "Heatwave Resilient Cool Roof",
+      "clause": "Odisha State Heat Action Plan - Building Code Adaptation",
+      "parameter": "roof_sri",
+      "operator": ">=",
+      "min_limit": 78.0,
+      "units": "Solar Reflectance Index",
+      "description": "Exposed non-vegetated roof slabs in urban and peri-urban areas must maintain high solar reflectance (SRI >= 78) to mitigate extreme summer surface heat.",
+      "failure_severity": "REVIEW",
+      "remediation": "Apply high-albedo white reflective coating or install solar reflective tiles on top terrace surface."
+    }
+  ]
+}

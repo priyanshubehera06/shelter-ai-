@@ -1,0 +1,28 @@
+{
+  "state_name": "Tamil Nadu",
+  "state_code": "TN",
+  "governing_document": "Tamil Nadu Combined Development and Building Rules (TNCDBR) & TN Energy Conservation Code",
+  "authority": "Housing and Urban Development Department, Govt of Tamil Nadu",
+  "effective_date": "2019-02-04",
+  "last_verified": "2025-07-22",
+  "status": "verified",
+  "source_url": "http://www.cmdachennai.gov.in/",
+  "climate_adaptations": [
+    "Warm & Humid coastal airflow enhancement provisions.",
+    "Mandatory Rainwater Harvesting and solar roof incentives."
+  ],
+  "rules": [
+    {
+      "id": "TN_VENT_OPENING",
+      "category": "Humid Climate Ventilation Aperture",
+      "clause": "Rule 38 - Lighting and Ventilation",
+      "parameter": "window_to_floor_ratio_pct",
+      "operator": ">=",
+      "min_limit": 12.5,
+      "units": "% of floor area",
+      "description": "Aggregate operable area of doors and windows opening directly to exterior air must be at least 1/8th (12.5%) of floor area for tropical warm-humid airflow.",
+      "failure_severity": "REVIEW",
+      "remediation": "Increase window area or add cross-ventilation transoms."
+    }
+  ]
+}

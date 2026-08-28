@@ -1,0 +1,60 @@
+{
+  "code_id": "ENS_2021",
+  "code_name": "Eco-Niwas Samhita (ENS) 2021 - Energy Conservation Building Code for Residential Buildings",
+  "authority": "Bureau of Energy Efficiency (BEE), Ministry of Power, Govt of India",
+  "jurisdiction": "National / Central",
+  "scope": "Residential & Transitional Shelter Envelopes",
+  "effective_date": "2021-07-01",
+  "source_url": "https://beeindia.gov.in/en/eco-niwas-samhita",
+  "status": "verified",
+  "rules": [
+    {
+      "id": "ENS_ROOF_U",
+      "category": "Roof Thermal Performance",
+      "clause": "Clause 4.1.2 - Maximum Thermal Transmittance of Roof",
+      "parameter": "u_roof",
+      "operator": "<=",
+      "max_limit": 1.2,
+      "units": "W/m²K",
+      "description": "The maximum assembly U-value of the roof envelope must not exceed 1.20 W/m²K for Composite, Hot-Dry, and Warm-Humid climates.",
+      "failure_severity": "FAIL",
+      "remediation": "Add thermal insulation (e.g. 50mm Rockwool/EPS) or install a ventilated double roof."
+    },
+    {
+      "id": "ENS_RETV",
+      "category": "Envelope Heat Gain (RETV)",
+      "clause": "Clause 4.1.1 - Residential Envelope Transmittance Value",
+      "parameter": "retv",
+      "operator": "<=",
+      "max_limit": 15.0,
+      "units": "W/m²",
+      "description": "RETV characterizes the net thermal heat gain through the building envelope per unit wall area. Maximum permissible RETV is 15.0 W/m² for Composite and Hot-Dry climates.",
+      "failure_severity": "FAIL",
+      "remediation": "Reduce WWR on West/East facades, enhance wall insulation, or specify higher overhang projection factors."
+    },
+    {
+      "id": "ENS_OPENING_VENTILATION",
+      "category": "Natural Ventilation Potential",
+      "clause": "Clause 4.2 - Minimum Operable Window Area",
+      "parameter": "operable_opening_ratio_pct",
+      "operator": ">=",
+      "min_limit": 10.0,
+      "units": "% of floor area",
+      "description": "The aggregate area of operable windows/ventilators must be at least 10% of the usable floor area to promote natural cross ventilation.",
+      "failure_severity": "REVIEW",
+      "remediation": "Increase window opening sizes or add operable ventilation louvers."
+    },
+    {
+      "id": "ENS_DAYLIGHT_VLT",
+      "category": "Daylighting Performance",
+      "clause": "Clause 4.3 - Visible Light Transmittance (VLT)",
+      "parameter": "vlt",
+      "operator": ">=",
+      "min_limit": 0.27,
+      "units": "dimensionless ratio",
+      "description": "Glazing must maintain a minimum Visible Light Transmittance (VLT) of 0.27 to ensure adequate internal daylight autonomy.",
+      "failure_severity": "REVIEW",
+      "remediation": "Ensure high-clarity clear or Low-E spectrally selective glazing."
+    }
+  ]
+}

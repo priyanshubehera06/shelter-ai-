@@ -1,7 +1,8 @@
 """
 solar.py — Astronomical Solar Calculations and Surface Thermal Physics Engine for ShelterAI.
-Provides pure mathematical implementations for NOAA solar positioning, solar vector projection,
-and surface Sol-Air thermal color mappings with ZERO external 3D/graphics dependencies.
+Provides pure mathematical implementations for NOAA solar positioning, directional surface
+incidence angles, beam/diffuse irradiance decomposition, fenestration solar heat gains,
+and surface Sol-Air thermal field mappings.
 """
 
 import math
@@ -14,9 +15,9 @@ import numpy as np
 # ==============================================================================
 
 def calculate_solar_position(
-    lat_deg: float = 21.4669,
-    lon_deg: float = 83.9812,
-    day_of_year: int = 135,
+    lat_deg: float = 34.1526,  # Default: Leh, Ladakh (34.15° N)
+    lon_deg: float = 77.5771,  # Default: Leh, Ladakh (77.58° E)
+    day_of_year: int = 15,     # Winter January baseline
     hour_of_day: float = 12.0,
     timezone_offset: float = 5.5
 ) -> Tuple[float, float, bool]:
@@ -91,7 +92,104 @@ def get_solar_vector(altitude_deg: float, azimuth_deg: float) -> np.ndarray:
 
 
 # ==============================================================================
-# 2. SURFACE THERMAL COLOR & SOL-AIR TEMPERATURE MAPPING
+# 2. SURFACE SOLAR IRRADIANCE & FENESTRATION HEAT GAIN
+# ==============================================================================
+
+def calculate_surface_incidence_angle(
+    solar_alt_deg: float,
+    solar_az_deg: float,
+    surface_tilt_deg: float,
+    surface_az_deg: float
+) -> float:
+    """
+    Calculates the angle of incidence theta between solar rays and surface normal:
+    cos(theta) = sin(alpha_s)*cos(beta) + cos(alpha_s)*sin(beta)*cos(gamma_s - gamma)
+    where alpha_s = solar altitude, beta = surface tilt (0 = horizontal, 90 = vertical),
+          gamma_s = solar azimuth, gamma = surface azimuth.
+    """
+    if solar_alt_deg <= 0.0:
+        return 90.0
+
+    alt_rad = math.radians(solar_alt_deg)
+    tilt_rad = math.radians(surface_tilt_deg)
+    gamma_diff_rad = math.radians(solar_az_deg - surface_az_deg)
+
+    cos_theta = (
+        math.sin(alt_rad) * math.cos(tilt_rad) +
+        math.cos(alt_rad) * math.sin(tilt_rad) * math.cos(gamma_diff_rad)
+    )
+    cos_theta = max(0.0, min(1.0, cos_theta))
+    return math.degrees(math.acos(cos_theta))
+
+
+def calculate_incident_radiation_on_surface(
+    ghi_w_m2: float,
+    solar_alt_deg: float,
+    solar_az_deg: float,
+    surface_tilt_deg: float,
+    surface_az_deg: float,
+    ground_albedo: float = 0.20
+) -> float:
+    """
+    Computes total solar irradiance incident on a tilted/vertical surface (W/m²),
+    decomposing global horizontal into beam, diffuse sky, and ground-reflected components (Perez/Liu-Jordan model).
+    """
+    if ghi_w_m2 <= 0.0 or solar_alt_deg <= 0.0:
+        return 0.0
+
+    theta_deg = calculate_surface_incidence_angle(solar_alt_deg, solar_az_deg, surface_tilt_deg, surface_az_deg)
+    cos_theta = math.cos(math.radians(theta_deg))
+    sin_alt = math.sin(math.radians(solar_alt_deg))
+
+    # Approximate direct-beam fraction based on clear-sky index
+    c_ratio = max(0.15, min(0.85, (ghi_w_m2 / 1000.0) ** 0.8))
+    dhi = ghi_w_m2 * (1.0 - c_ratio)
+    dni = (ghi_w_m2 - dhi) / max(0.05, sin_alt)
+
+    # Beam on surface
+    i_beam = max(0.0, dni * cos_theta)
+    # Sky diffuse (isotropic view factor)
+    tilt_rad = math.radians(surface_tilt_deg)
+    i_diffuse = dhi * ((1.0 + math.cos(tilt_rad)) / 2.0)
+    # Ground reflected
+    i_ground = ghi_w_m2 * ground_albedo * ((1.0 - math.cos(tilt_rad)) / 2.0)
+
+    total_i = i_beam + i_diffuse + i_ground
+    return round(float(total_i), 2)
+
+
+def calculate_fenestration_solar_gain(
+    glazed_area_m2: float,
+    shgc: float,
+    incident_radiation_w_m2: float,
+    shading_factor: float = 0.0
+) -> float:
+    """
+    Computes transmitted solar thermal heat gain through window openings in Watts:
+    Q_solar = Area * SHGC * I_T * (1 - Shading_Factor)
+    """
+    unshaded_fraction = max(0.0, min(1.0, 1.0 - shading_factor))
+    q_sol = glazed_area_m2 * shgc * incident_radiation_w_m2 * unshaded_fraction
+    return round(max(0.0, float(q_sol)), 2)
+
+
+def calculate_sol_air_temperature(
+    t_ambient_c: float,
+    incident_rad_w_m2: float,
+    solar_absorptivity: float = 0.70,
+    h_outdoor: float = 22.7,
+    longwave_correction_c: float = 4.0
+) -> float:
+    """
+    Calculates the equivalent Sol-Air temperature for an exterior building surface:
+    T_sol-air = T_amb + (alpha * I_T / h_o) - dR_lw
+    """
+    t_sol = t_ambient_c + (solar_absorptivity * incident_rad_w_m2 / h_outdoor) - longwave_correction_c
+    return round(float(t_sol), 2)
+
+
+# ==============================================================================
+# 3. SURFACE THERMAL COLOR MAPPING
 # ==============================================================================
 
 MATERIAL_SPECS = {
@@ -123,13 +221,13 @@ MATERIAL_SPECS = {
         'description': 'Lightweight precast foam concrete with superior thermal insulation.'
     },
     'stone_masonry': {
-        'name': 'Dressed Stone Masonry',
+        'name': 'Dressed Stone / Granite Masonry',
         'color': '#7f8c8d',
         'diffuse': 0.85,
         'specular': 0.05,
         'ambient': 0.25,
         'category': 'Heavy Thermal Mass',
-        'description': 'High-density indigenous stone masonry with high thermal damping.'
+        'description': 'High-density indigenous stone masonry providing high thermal mass damping for high altitudes.'
     },
     'eps_sandwich_panel': {
         'name': 'EPS Insulated Sandwich Panel',
@@ -165,25 +263,7 @@ MATERIAL_SPECS = {
         'specular': 0.25,
         'ambient': 0.30,
         'category': 'Insulated Metal',
-        'description': 'CGI sheet with polyurethane core preventing severe summer radiant heat gain.'
-    },
-    'roof_insulated_cgi': {
-        'name': 'Insulated Sandwich CGI Roof',
-        'color': '#7f8c8d',
-        'diffuse': 0.75,
-        'specular': 0.25,
-        'ambient': 0.30,
-        'category': 'Insulated Metal',
-        'description': 'CGI sheet with polyurethane core preventing severe summer radiant heat gain.'
-    },
-    'roof_terracotta_tile': {
-        'name': 'Mangalore Terracotta Clay Tile',
-        'color': '#e67e22',
-        'diffuse': 0.88,
-        'specular': 0.05,
-        'ambient': 0.30,
-        'category': 'Breathable Clay',
-        'description': 'Traditional pitched clay roof allowing natural attic convective cooling.'
+        'description': 'CGI sheet with polyurethane/rockwool core preventing extreme winter radiant heat loss.'
     },
     'roof_concrete_slab': {
         'name': 'Reinforced Concrete Slab (RCC)',
@@ -194,23 +274,14 @@ MATERIAL_SPECS = {
         'category': 'Heavy Thermal Mass',
         'description': 'Monolithic concrete slab with high thermal storage and long lifespan.'
     },
-    'roof_bamboo_thatch': {
-        'name': 'Bamboo Thatch & Mud Tile',
-        'color': '#a0522d',
-        'diffuse': 0.90,
+    'roof_cool_tile': {
+        'name': 'High-SRI Solar Reflective Roof Deck',
+        'color': '#f8f9fa',
+        'diffuse': 0.95,
         'specular': 0.05,
-        'ambient': 0.30,
-        'category': 'Organic Passive',
-        'description': 'Natural thatched roofing providing superior radiant heat rejection.'
-    },
-    'roof_solar_pv': {
-        'name': 'Building Integrated PV (BIPV) Roof',
-        'color': '#1a252f',
-        'diffuse': 0.60,
-        'specular': 0.60,
-        'ambient': 0.20,
-        'category': 'Active Solar',
-        'description': 'High-efficiency monocrystalline solar roof generating clean electricity.'
+        'ambient': 0.45,
+        'category': 'Cool Roof Coating',
+        'description': 'High solar reflectance index ceramic tile coating cutting solar absorption.'
     }
 }
 
@@ -243,7 +314,7 @@ def get_material_colors(wall_mat_id: str, roof_mat_id: str) -> Tuple[str, str, s
 def calculate_surface_thermal_color(
     normal_vector: np.ndarray,
     sun_vector: np.ndarray,
-    base_temp: float = 30.0,
+    base_temp: float = 20.0,
     max_ghi: float = 850.0
 ) -> Tuple[str, float]:
     """
@@ -251,7 +322,7 @@ def calculate_surface_thermal_color(
     """
     cos_theta = max(0.0, float(np.dot(normal_vector, sun_vector)))
     sol_air_t = base_temp + (cos_theta * (max_ghi / 30.0))
-    norm = float(np.clip((sol_air_t - 20.0) / 35.0, 0.0, 1.0))
+    norm = float(np.clip((sol_air_t - (-10.0)) / 50.0, 0.0, 1.0))
     if norm < 0.5:
         t = norm * 2.0
         r, g, b = int(41 + t * 202), int(128 + t * 28), int(185 - t * 167)

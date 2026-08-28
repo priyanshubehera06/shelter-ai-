@@ -1,0 +1,29 @@
+{
+  "state_name": "Kerala",
+  "state_code": "KL",
+  "governing_document": "Kerala Municipality Building Rules (KMBR) & Kerala ECBC",
+  "authority": "Local Self Government Department, Govt of Kerala",
+  "effective_date": "2019-11-08",
+  "last_verified": "2025-03-25",
+  "status": "verified",
+  "source_url": "https://lsgkerala.gov.in/",
+  "climate_adaptations": [
+    "Warm & Humid with heavy monsoon rainfall.",
+    "Mandatory roof slope and gutter drainage provisions.",
+    "Traditional courtyard and verandas for passive dehumidification."
+  ],
+  "rules": [
+    {
+      "id": "KL_ROOF_PITCH",
+      "category": "Monsoon Roof Slope & Drainage",
+      "clause": "KMBR Rule 58 - Sloped Roofing Standards",
+      "parameter": "roof_pitch_deg",
+      "operator": ">=",
+      "min_limit": 20.0,
+      "units": "degrees",
+      "description": "Pitched roofs in heavy rainfall zones must maintain a minimum slope of 20 degrees with waterproof underlayment.",
+      "failure_severity": "REVIEW",
+      "remediation": "Increase roof pitch to at least 20 degrees for rapid stormwater runoff."
+    }
+  ]
+}

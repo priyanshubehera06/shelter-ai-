@@ -1,0 +1,40 @@
+{
+  "state_name": "Assam",
+  "state_code": "AS",
+  "governing_document": "Assam Notified Urban Building Byelaws & Disaster Resilient Construction Standards",
+  "authority": "Guwahati Development Department / Urban Development, Govt of Assam",
+  "effective_date": "2014-06-18",
+  "last_verified": "2025-04-10",
+  "status": "verified",
+  "source_url": "https://gdd.assam.gov.in/",
+  "climate_adaptations": [
+    "Warm & Humid with heavy monsoon rainfall (>2000mm/yr).",
+    "High flood-prone riverine geography.",
+    "Seismic Zone V (Highest earthquake vulnerability)."
+  ],
+  "rules": [
+    {
+      "id": "AS_ELEVATED_STILT",
+      "category": "Flood Inundation & Stilt Design",
+      "clause": "Byelaw 32 - Construction in Flood Inundation Zones",
+      "parameter": "plinth_height_m",
+      "operator": ">=",
+      "min_limit": 1.00,
+      "units": "meters",
+      "description": "Shelters in designated high flood zones must be constructed on stilts or elevated plinths >= 1.0m above High Flood Level (HFL).",
+      "failure_severity": "FAIL",
+      "remediation": "Elevate base structure on reinforced stilts."
+    },
+    {
+      "id": "AS_SEISMIC_ZONE_V",
+      "category": "Seismic Ductile Detailing",
+      "clause": "Byelaw 45 - Structural Safety in Zone V",
+      "parameter": "seismic_band_integrated",
+      "operator": "==",
+      "expected_value": true,
+      "description": "All structures must have ductile cross-bracing or reinforced concrete framing meeting IS 13920 specifications.",
+      "failure_severity": "REVIEW",
+      "remediation": "Integrate diagonal corner bracing and reinforced lintel bands."
+    }
+  ]
+}

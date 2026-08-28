@@ -1,0 +1,28 @@
+{
+  "state_name": "Karnataka",
+  "state_code": "KA",
+  "governing_document": "Bruhat Bengaluru Mahanagara Palike (BBMP) Building Bye-Laws & Karnataka ECBC",
+  "authority": "Urban Development Department, Govt of Karnataka",
+  "effective_date": "2021-03-10",
+  "last_verified": "2025-09-18",
+  "status": "verified",
+  "source_url": "https://bbmp.gov.in/",
+  "climate_adaptations": [
+    "Moderate plateau climate standards for South Karnataka and semi-arid provisions for North Karnataka (Kalaburagi/Belagavi).",
+    "Mandatory solar photovoltaic provision for new institutional structures."
+  ],
+  "rules": [
+    {
+      "id": "KA_ROOF_OVERHANG",
+      "category": "Weather Protection Overhang",
+      "clause": "BBMP Bye-Law 28 - Chajja Projections",
+      "parameter": "overhang_m",
+      "operator": ">=",
+      "min_limit": 0.60,
+      "units": "meters",
+      "description": "Continuous roof overhang of minimum 0.60m required on all exposed eaves to shield against monsoon rains.",
+      "failure_severity": "PASS",
+      "remediation": "Extend roof eaves by at least 0.60m."
+    }
+  ]
+}

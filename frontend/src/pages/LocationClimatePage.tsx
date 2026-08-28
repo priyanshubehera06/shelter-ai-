@@ -117,16 +117,25 @@ export const LocationClimatePage: React.FC = () => {
           </div>
         </div>
 
-        <Button
-          variant="primary"
-          size="sm"
-          icon={<Crosshair className="w-4 h-4" />}
-          isLoading={isDetectingIp}
-          onClick={handleDetectIP}
-          className="shrink-0"
-        >
-          Auto-Detect My Location
-        </Button>
+        <div className="flex items-center gap-2 shrink-0">
+          <Button
+            variant="secondary"
+            size="sm"
+            icon={<Sun className="w-4 h-4 text-amber-400" />}
+            onClick={() => setLocationId('leh_ladakh')}
+          >
+            Load Ladakh Case Study
+          </Button>
+          <Button
+            variant="primary"
+            size="sm"
+            icon={<Crosshair className="w-4 h-4" />}
+            isLoading={isDetectingIp}
+            onClick={handleDetectIP}
+          >
+            Auto-Detect My Location
+          </Button>
+        </div>
       </div>
 
       {/* Detected IP Details Banner if active */}

@@ -1,0 +1,28 @@
+{
+  "state_name": "Maharashtra",
+  "state_code": "MH",
+  "governing_document": "Maharashtra Unified Development Control and Promotion Regulations (UDCPR) & Maharashtra ECBC",
+  "authority": "Urban Development Department, Govt of Maharashtra",
+  "effective_date": "2020-12-02",
+  "last_verified": "2025-10-10",
+  "status": "verified",
+  "source_url": "https://urban.maharashtra.gov.in/",
+  "climate_adaptations": [
+    "Warm & Humid coastal requirements for MMR/Konkan and Composite/Semi-Arid requirements for Vidarbha/Marathwada.",
+    "Green Building incentives for IGBC/GRIHA compliance."
+  ],
+  "rules": [
+    {
+      "id": "MH_CROSS_VENT",
+      "category": "Cross Ventilation Provision",
+      "clause": "UDCPR Clause 9.3 - Ventilation and Light in Habitable Rooms",
+      "parameter": "cross_ventilation_ratio",
+      "operator": ">=",
+      "min_limit": 1.0,
+      "units": "binary index (1 = compliant)",
+      "description": "Habitable spaces must have openings on at least two distinct wall orientations or direct connection to a central courtyard/shaft for induced airflow.",
+      "failure_severity": "REVIEW",
+      "remediation": "Add high-level transom windows or opposite wall vent grilles."
+    }
+  ]
+}

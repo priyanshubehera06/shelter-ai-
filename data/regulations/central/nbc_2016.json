@@ -1,0 +1,60 @@
+{
+  "code_id": "NBC_2016",
+  "code_name": "National Building Code of India (NBC) 2016 - Part 8 Building Services & Part 3 General Building Requirements",
+  "authority": "Bureau of Indian Standards (BIS)",
+  "jurisdiction": "National / Central Model Byelaw",
+  "scope": "All Habitable Buildings and Community Shelters",
+  "effective_date": "2016-12-01",
+  "source_url": "https://www.bis.gov.in/",
+  "status": "verified",
+  "rules": [
+    {
+      "id": "NBC_CEILING_HEIGHT",
+      "category": "Minimum Habitable Clear Height",
+      "clause": "Part 3, Clause 12.2 - Minimum Height of Habitable Rooms",
+      "parameter": "height_m",
+      "operator": ">=",
+      "min_limit": 2.6,
+      "units": "meters",
+      "description": "Clear height of all habitable rooms from finished floor to lowest point of ceiling or truss must not be less than 2.60 m (2.75 m recommended in hot-humid zones).",
+      "failure_severity": "FAIL",
+      "remediation": "Increase floor-to-ceiling framing height to at least 2.60 m."
+    },
+    {
+      "id": "NBC_MIN_FLOOR_AREA",
+      "category": "Minimum Floor Area per Habitable Unit",
+      "clause": "Part 3, Clause 12.1 - Size of Habitable Rooms",
+      "parameter": "floor_area_m2",
+      "operator": ">=",
+      "min_limit": 9.5,
+      "units": "m²",
+      "description": "Single habitable room must have a minimum carpet area of 9.5 m² with a minimum width of 2.4 m.",
+      "failure_severity": "REVIEW",
+      "remediation": "Expand floor footprint or reconfigure modular partition spacing."
+    },
+    {
+      "id": "NBC_VENT_LIGHT_AREA",
+      "category": "Ventilation & Light Opening Requirement",
+      "clause": "Part 8, Section 1, Clause 5 - Natural Ventilation Apertures",
+      "parameter": "window_to_floor_ratio_pct",
+      "operator": ">=",
+      "min_limit": 10.0,
+      "units": "% of floor area",
+      "description": "Total area of exterior openings directly opening into external air must be at least 1/10th of floor area in dry climates and 1/8th (12.5%) in humid climates.",
+      "failure_severity": "REVIEW",
+      "remediation": "Enlarge operable fenestration or install ridge / gable ventilation vents."
+    },
+    {
+      "id": "NBC_OVERHANG_PROJECTION",
+      "category": "Solar Shading & Chajja Projection",
+      "clause": "Part 8, Section 1, Clause 4.3 - Weather Protection Chajja",
+      "parameter": "overhang_m",
+      "operator": ">=",
+      "min_limit": 0.45,
+      "units": "meters",
+      "description": "Windows exposed to direct solar radiation or heavy driving rain must have overhangs/chajjas projecting at least 0.45 m beyond the wall face.",
+      "failure_severity": "REVIEW",
+      "remediation": "Increase roof eave or window chajja projection to >= 0.45 m."
+    }
+  ]
+}

@@ -1,0 +1,27 @@
+{
+  "state_name": "Uttar Pradesh",
+  "state_code": "UP",
+  "governing_document": "UP Model Building Byelaws & Uttar Pradesh Energy Conservation Building Code (UPECBC)",
+  "authority": "Housing and Urban Planning Department, Govt of Uttar Pradesh",
+  "effective_date": "2018-07-20",
+  "last_verified": "2025-05-19",
+  "status": "verified",
+  "source_url": "http://awas.up.nic.in/",
+  "climate_adaptations": [
+    "Composite climate standards: summer extreme heatwave mitigation and winter cold wave thermal retention."
+  ],
+  "rules": [
+    {
+      "id": "UP_WALL_INSULATION",
+      "category": "Composite Climate Envelope Insulation",
+      "clause": "UPECBC Clause 4.2 - Envelope Thermal Performance",
+      "parameter": "u_wall",
+      "operator": "<=",
+      "max_limit": 0.60,
+      "units": "W/m²K",
+      "description": "Opaque exterior walls must not exceed U-value of 0.60 W/m²K to prevent peak summer heat conduction and winter heat loss.",
+      "failure_severity": "REVIEW",
+      "remediation": "Specify AAC blocks, hollow clay blocks, or external insulation on masonry."
+    }
+  ]
+}

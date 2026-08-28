@@ -1,7 +1,7 @@
 """
 materials.py — Materials intelligence and envelope thermo-physical assembly engine.
 Calculates thermal resistance (R-value), U-value, volumetric heat capacity (thermal mass),
-embodied carbon, and construction cost for building envelope layers.
+embodied carbon, and construction cost for building envelope layers and multi-layer composite systems.
 """
 
 import os
@@ -15,7 +15,6 @@ def get_materials_catalog() -> pd.DataFrame:
     """Loads and standardizes the envelope materials catalog from CSV."""
     if os.path.exists(MATERIALS_CSV):
         df = pd.read_csv(MATERIALS_CSV)
-        # Normalize column aliases
         col_map = {
             "thermal_conductivity": "thermal_cond_w_mk",
             "density": "density_kg_m3",
@@ -31,14 +30,40 @@ def get_materials_catalog() -> pd.DataFrame:
     return pd.DataFrame()
 
 
-def get_material_by_id(mat_id: str) -> Dict[str, Any]:
-    """Retrieves physical and economic properties for a single material by ID."""
+def get_material_by_id(mat_id: str, custom_props: Optional[Dict[str, float]] = None) -> Dict[str, Any]:
+    """
+    Retrieves physical and economic properties for a single material by ID,
+    with support for user-defined custom properties.
+    """
+    if custom_props:
+        k = float(custom_props.get("thermal_cond_w_mk", custom_props.get("k", 0.77)))
+        rho = float(custom_props.get("density_kg_m3", custom_props.get("rho", 1800.0)))
+        cp = float(custom_props.get("specific_heat_j_kgk", custom_props.get("cp", 840.0)))
+        cost = float(custom_props.get("unit_cost_inr_m2", custom_props.get("cost", 1000.0)))
+        carbon = float(custom_props.get("embodied_carbon_kgco2_kg", 0.15))
+        return {
+            "id": mat_id,
+            "name": f"Custom Material ({mat_id})",
+            "category": "Custom",
+            "thermal_cond_w_mk": k,
+            "thermal_conductivity": k,
+            "density_kg_m3": rho,
+            "density": rho,
+            "specific_heat_j_kgk": cp,
+            "specific_heat": cp,
+            "unit_cost_inr_m2": cost,
+            "cost_per_m2": cost,
+            "embodied_carbon_kgco2_kg": carbon,
+            "thickness_options": "10;15;20;25",
+            "availability_score": 8.0,
+            "description": "User-defined custom material properties"
+        }
+
     df = get_materials_catalog()
     if not df.empty:
         mat = df[df["id"] == mat_id]
         if not mat.empty:
             row = mat.iloc[0].to_dict()
-            # Ensure required float keys exist
             k = float(row.get("thermal_cond_w_mk", row.get("thermal_conductivity", 0.77)))
             rho = float(row.get("density_kg_m3", row.get("density", 1800.0)))
             cp = float(row.get("specific_heat_j_kgk", row.get("specific_heat", 840.0)))
@@ -121,6 +146,55 @@ def calculate_assembly_u_value(
         "u_value_w_m2k": round(u_value, 4),
         "r_value_m2k_w": round(r_total, 4),
         "thermal_mass_kj_m2k": round(total_thermal_mass, 2),
+    }
+
+
+def calculate_composite_assembly_u_value(layers: List[Dict[str, Any]]) -> Dict[str, Any]:
+    """
+    Computes precise thermal resistance, U-value, and total thermal mass for an arbitrary
+    multi-layer composite envelope (e.g. Exterior Plaster + Insulation + Trombe Mass + Interior Wood).
+    Each layer dict: {"material_id": str, "thickness_cm": float, "custom_props": optional dict}
+    """
+    if not layers:
+        return calculate_assembly_u_value("brick_standard", 20.0)
+
+    r_layers_sum = 0.0
+    total_thermal_mass = 0.0
+    total_thickness_m = 0.0
+    total_carbon = 0.0
+    total_cost_m2 = 0.0
+
+    for l in layers:
+        mat_id = l.get("material_id", "brick_standard")
+        thick_cm = max(0.1, float(l.get("thickness_cm", 10.0)))
+        thick_m = thick_cm / 100.0
+        mat = get_material_by_id(mat_id, l.get("custom_props"))
+
+        k = max(0.001, float(mat["thermal_cond_w_mk"]))
+        r_layer = thick_m / k
+        r_layers_sum += r_layer
+
+        layer_mass = (float(mat["density_kg_m3"]) * float(mat["specific_heat_j_kgk"]) * thick_m) / 1000.0
+        total_thermal_mass += layer_mass
+        total_thickness_m += thick_m
+
+        layer_weight_kg_m2 = float(mat["density_kg_m3"]) * thick_m
+        total_carbon += layer_weight_kg_m2 * float(mat["embodied_carbon_kgco2_kg"])
+        total_cost_m2 += float(mat["unit_cost_inr_m2"]) * (thick_cm / 15.0)
+
+    r_si = 0.13
+    r_se = 0.04
+    r_total = r_si + r_layers_sum + r_se
+    u_val = 1.0 / max(0.05, r_total)
+
+    return {
+        "u_value_w_m2k": round(u_val, 4),
+        "r_value_m2k_w": round(r_total, 4),
+        "thermal_mass_kj_m2k": round(total_thermal_mass, 2),
+        "total_thickness_cm": round(total_thickness_m * 100.0, 1),
+        "layers_count": len(layers),
+        "embodied_carbon_kgco2_m2": round(total_carbon, 2),
+        "cost_per_m2_inr": round(total_cost_m2, 2)
     }
 
 

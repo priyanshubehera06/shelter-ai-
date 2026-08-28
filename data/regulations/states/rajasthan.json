@@ -1,0 +1,41 @@
+{
+  "state_name": "Rajasthan",
+  "state_code": "RJ",
+  "governing_document": "Rajasthan Unified Building Bylaws & Rajasthan Energy Conservation Building Code (RECBC)",
+  "authority": "Urban Development & Housing Department, Govt of Rajasthan",
+  "effective_date": "2018-09-24",
+  "last_verified": "2025-10-15",
+  "status": "verified",
+  "source_url": "https://urban.rajasthan.gov.in/",
+  "climate_adaptations": [
+    "Hot & Dry climate zone adaptations requiring high thermal mass envelope and restricted fenestration on west/south-west facades.",
+    "Mandatory solar water heating and rainwater harvesting for plot areas > 300 m².",
+    "Mandatory deep overhangs / Jharokhas for microclimate buffering."
+  ],
+  "rules": [
+    {
+      "id": "RJ_WEST_WWR_MAX",
+      "category": "Solar Radiation Fenestration Limit",
+      "clause": "RECBC Clause 4.3 - West Facing Glazing Ratio",
+      "parameter": "west_wwr_pct",
+      "operator": "<=",
+      "max_limit": 15.0,
+      "units": "% of West wall area",
+      "description": "Glazed openings on West and South-West exposed facades must not exceed 15% to mitigate extreme evening peak solar heat gains.",
+      "failure_severity": "REVIEW",
+      "remediation": "Re-orient fenestration to North/East or install external vertical louvers."
+    },
+    {
+      "id": "RJ_WALL_THERMAL_MASS",
+      "category": "Envelope Thermal Inertia",
+      "clause": "Byelaw 14.3 - Thermal Mass Requirement in Arid Zones",
+      "parameter": "wall_thermal_mass_kj_m2k",
+      "operator": ">=",
+      "min_limit": 160.0,
+      "units": "kJ/m²K",
+      "description": "Exterior walls in arid regions must possess volumetric heat capacity >= 160 kJ/m²K (e.g. 200mm CSEB, fly-ash brick, or stone masonry) for thermal phase lag.",
+      "failure_severity": "PASS",
+      "remediation": "Increase wall thickness or replace lightweight panels with dense earth block or brick masonry."
+    }
+  ]
+}

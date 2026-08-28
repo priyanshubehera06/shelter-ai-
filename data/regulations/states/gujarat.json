@@ -1,0 +1,27 @@
+{
+  "state_name": "Gujarat",
+  "state_code": "GJ",
+  "governing_document": "Comprehensive General Development Control Regulations (CGDCR) & Gujarat ECBC",
+  "authority": "Urban Development & Urban Housing Department, Govt of Gujarat",
+  "effective_date": "2017-10-12",
+  "last_verified": "2025-08-14",
+  "status": "verified",
+  "source_url": "https://udd.gujarat.gov.in/",
+  "climate_adaptations": [
+    "Seismic Zone III-V design standards for Kutch / Saurashtra regions.",
+    "Reflective roof insulation and ventilation provisions for coastal hot-dry transition."
+  ],
+  "rules": [
+    {
+      "id": "GJ_SEISMIC_BOND",
+      "category": "Structural & Seismic Envelope Integrity",
+      "clause": "CGDCR Clause 19 - Structural Safety & IS 1893 compliance",
+      "parameter": "seismic_band_integrated",
+      "operator": "==",
+      "expected_value": true,
+      "description": "Continuous RCC plinth band and lintel band mandatory for all load-bearing masonry envelopes in Zone IV and V.",
+      "failure_severity": "REVIEW",
+      "remediation": "Incorporate RCC tie-bands at plinth, lintel, and roof levels."
+    }
+  ]
+}

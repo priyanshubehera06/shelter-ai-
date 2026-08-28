@@ -1,0 +1,48 @@
+{
+  "code_id": "ECBC_2017",
+  "code_name": "Energy Conservation Building Code (ECBC) 2017 / ECSBC 2024",
+  "authority": "Bureau of Energy Efficiency (BEE), Ministry of Power",
+  "jurisdiction": "National / Central (Commercial & Institutional Shelters)",
+  "scope": "Shelters with connected electrical load >= 100 kW or contract demand >= 120 kVA",
+  "effective_date": "2017-06-01",
+  "source_url": "https://beeindia.gov.in/en/energy-conservation-building-code",
+  "status": "verified",
+  "rules": [
+    {
+      "id": "ECBC_WALL_U",
+      "category": "Opaque Wall Thermal Transmittance",
+      "clause": "Table 4.1 - Maximum U-Factor for Opaque Walls",
+      "parameter": "u_wall",
+      "operator": "<=",
+      "max_limit": 0.44,
+      "units": "W/m²K",
+      "description": "Composite and Hot-Dry climates mandate opaque exterior wall U-value <= 0.44 W/m²K for mandatory ECBC baseline compliance.",
+      "failure_severity": "FAIL",
+      "remediation": "Utilize AAC blocks with exterior insulation or cavity wall with minimum 50mm Rockwool."
+    },
+    {
+      "id": "ECBC_ROOF_U",
+      "category": "Roof Assembly Thermal Transmittance",
+      "clause": "Table 4.2 - Maximum U-Factor for Roof Assembly",
+      "parameter": "u_roof",
+      "operator": "<=",
+      "max_limit": 0.33,
+      "units": "W/m²K",
+      "description": "Roof assemblies in all climate zones except cold must not exceed 0.33 W/m²K for baseline ECBC rating.",
+      "failure_severity": "FAIL",
+      "remediation": "Incorporate continuous 75mm rigid XPS/EPS or 80mm high-density Rockwool insulation beneath roof deck."
+    },
+    {
+      "id": "ECBC_WWR_MAX",
+      "category": "Window-to-Wall Ratio Limit",
+      "clause": "Clause 4.3.1 - Maximum Fenestration Area",
+      "parameter": "wwr_pct",
+      "operator": "<=",
+      "max_limit": 40.0,
+      "units": "% of gross wall area",
+      "description": "Maximum allowable Window-to-Wall Ratio without prescriptive dynamic shading or whole-building energy modeling is 40%.",
+      "failure_severity": "REVIEW",
+      "remediation": "Reduce glazed area or integrate external shading devices with overhang projection factor >= 0.5."
+    }
+  ]
+}

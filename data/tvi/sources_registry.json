@@ -1,0 +1,90 @@
+{
+  "registry_title": "ShelterAI Thermal Vulnerability Data Source Provenance Registry",
+  "disclaimer": "All datasets are compiled from published meteorological, governmental, and peer-reviewed Indian energy studies. They serve decision-support screening and do not represent formal governmental risk rankings.",
+  "sources": [
+    {
+      "variable_id": "heat_exposure",
+      "variable_name": "Climatological Heat Exposure Score (0-100)",
+      "primary_source": "India Meteorological Department (IMD) - Climatological Normals & Gridded Temperature Data",
+      "source_url": "https://mausam.imd.gov.in/",
+      "publication_year": 2024,
+      "data_year_range": "1991-2023",
+      "spatial_resolution": "0.25° x 0.25° Gridded & State Aggregated",
+      "units": "Composite index derived from mean summer Tmax (°C) & annual Cooling Degree Days (CDD18)",
+      "methodology": "Min-max normalization of 30-year state-averaged maximum dry-bulb temperatures across peak summer months (March-June).",
+      "limitations": "Microclimatic topography variations within mountainous or coastal state pockets may experience local deviations."
+    },
+    {
+      "variable_id": "extreme_heat",
+      "variable_name": "Extreme Heatwave Frequency & Duration Score (0-100)",
+      "primary_source": "IMD Extreme Weather Events Report & NDMA National Heat Action Plans",
+      "source_url": "https://ndma.gov.in/",
+      "publication_year": 2024,
+      "data_year_range": "2010-2024",
+      "spatial_resolution": "District-level reports aggregated to State level",
+      "units": "Days/year with Tmax departure > 4.5°C over normal",
+      "methodology": "Normalized metric of annual cumulative heatwave days and severe heatwave declarations per state.",
+      "limitations": "Under-reporting of localized micro-heatwave pockets in non-monitored rural stations."
+    },
+    {
+      "variable_id": "thermal_stress",
+      "variable_name": "Humidity-Adjusted Heat Stress / Wet-Bulb Burden (0-100)",
+      "primary_source": "IMD & ERA5 Reanalysis Calibrated Data / National Institute of Occupational Health (NIOH)",
+      "source_url": "https://www.ecmwf.int/en/forecasts/dataset/ecmwf-reanalysis-v5",
+      "publication_year": 2024,
+      "data_year_range": "2000-2024",
+      "spatial_resolution": "0.1° x 0.1°",
+      "units": "NOAA Heat Index & Simplified Wet Bulb Globe Temperature (sWBGT) exceedance hours",
+      "methodology": "Hourly calculation of wet-bulb temperature exceeding 28°C and Heat Index > 41°C during pre-monsoon and monsoon seasons.",
+      "limitations": "Indoor temperature elevations are modeled assuming standard naturally ventilated residential envelopes."
+    },
+    {
+      "variable_id": "cooling_burden",
+      "variable_name": "Residential Cooling Energy Burden Score (0-100)",
+      "primary_source": "Bureau of Energy Efficiency (BEE) - India Energy Outlook & National Smart Grid Mission",
+      "source_url": "https://beeindia.gov.in/",
+      "publication_year": 2023,
+      "data_year_range": "2018-2023",
+      "spatial_resolution": "State electricity distribution utility logs",
+      "units": "kWh/household/summer month & grid peak load ramp factor",
+      "methodology": "Calculated from baseline Cooling Degree Hours (base 24°C) combined with DISCOM peak seasonal surge reports.",
+      "limitations": "Informal cooling strategies (evaporative coolers, natural ventilation) are estimated via typical household saturation surveys."
+    },
+    {
+      "variable_id": "population_vulnerability",
+      "variable_name": "Demographic & Socio-Economic Sensitivity Score (0-100)",
+      "primary_source": "Census of India & Ministry of Health and Family Welfare (MoHFW) - NFHS-5 Survey",
+      "source_url": "https://dhsprogram.com/pubs/pdf/FR375/FR375.pdf",
+      "publication_year": 2022,
+      "data_year_range": "2019-2021",
+      "spatial_resolution": "State and District Level",
+      "units": "% Elderly (>65), % Under-5 children, % Outdoor manual labor workforce",
+      "methodology": "Multi-attribute weighted sum of vulnerable age demographics, manual agrarian/construction employment, and baseline healthcare density.",
+      "limitations": "Decadal population growth projections applied between decennial census intervals."
+    },
+    {
+      "variable_id": "building_vulnerability",
+      "variable_name": "Uninsulated & Kutcha Housing Stock Exposure Score (0-100)",
+      "primary_source": "Census Housing Tables & Ministry of Housing and Urban Affairs (MoHUA) - PMAY-U / PMAY-G Datasets",
+      "source_url": "https://pmay-urban.gov.in/",
+      "publication_year": 2023,
+      "data_year_range": "2018-2023",
+      "spatial_resolution": "State / Urban-Rural division",
+      "units": "% Shelters with uninsulated CGI sheet or tin roofs, % Kutcha wall structures",
+      "methodology": "Composite index of high-absorptance low-inertia roof materials (corrugated sheet, asbestos, uninsulated concrete slabs) lacking thermal barrier treatment.",
+      "limitations": "Incremental vernacular roof retrofits (thatch over sheet) may not be fully captured in formal housing records."
+    },
+    {
+      "variable_id": "adaptive_capacity",
+      "variable_name": "State Adaptive Infrastructure & Resilience Capacity (0-100)",
+      "primary_source": "NITI Aayog SDG India Index & Central Electricity Authority (CEA) Power Supply Reports",
+      "source_url": "https://www.niti.gov.in/reports-and-indices",
+      "publication_year": 2024,
+      "data_year_range": "2022-2024",
+      "spatial_resolution": "State / UT",
+      "units": "Composite index of 24x7 grid reliability, primary healthcare access, forest canopy cover, and state Heat Action Plan (HAP) implementation status",
+      "methodology": "Normalized score measuring preparedness, institutional heat response protocols, municipal cool roof mandates, and green cover buffer.",
+      "limitations": "Inter-district disparity inside large states (e.g. Western vs Eastern Maharashtra) is aggregated into state-level averages."
+    }
+  ]
+}

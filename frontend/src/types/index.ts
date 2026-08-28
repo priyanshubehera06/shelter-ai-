@@ -67,7 +67,7 @@ export interface ClimateAnalysisResponse {
 export interface MaterialItem {
   id: string;
   name: string;
-  category: 'Wall' | 'Roof' | 'Floor' | 'Glazing' | 'Insulation' | string;
+  category: 'Wall' | 'Roof' | 'Floor' | 'Glazing' | 'Insulation' | 'Door' | 'Shading' | string;
   thermal_cond_w_mk: number;
   density_kg_m3: number;
   specific_heat_j_kgk: number;
@@ -85,7 +85,8 @@ export interface GeometryParams {
   length_m: number;
   width_m: number;
   height_m: number;
-  roof_type: 'pitched' | 'monoslope' | 'hipped' | 'flat';
+  floors_count?: number;
+  roof_type: 'pitched' | 'monoslope' | 'hipped' | 'gable' | 'flat';
   roof_pitch_deg: number;
   wall_thickness_cm: number;
   wwr_pct: number;
@@ -94,6 +95,7 @@ export interface GeometryParams {
   door_width_m: number;
   door_height_m: number;
   door_count: number;
+  plinth_height_m?: number;
 }
 
 export interface MaterialSelection {
@@ -103,12 +105,17 @@ export interface MaterialSelection {
   insulation_mat_id?: string | null;
   insulation_thickness_cm: number;
   glazing_mat_id: string;
+  floor_mat_id?: string;
+  door_mat_id?: string;
 }
 
 export interface ShelterDesign {
   id?: string;
   name: string;
   archetype?: string;
+  mode?: 'normal' | 'disaster' | 'migrant';
+  disaster_mode?: string | null;
+  migrant_modules?: number;
   geometry: GeometryParams;
   materials: MaterialSelection;
   occupants: number;
@@ -136,11 +143,17 @@ export interface HourlySimulationRecord {
   t_outdoor: number;
   t_indoor: number;
   t_sol_air: number;
+  t_mass?: number;
   q_roof_w: number;
   q_wall_w: number;
+  q_floor_w?: number;
+  q_window_w?: number;
+  q_door_w?: number;
   q_solar_w: number;
   q_vent_w: number;
+  q_mass_w?: number;
   q_internal_w: number;
+  net_heat_flow_w?: number;
   pmv: number;
   ppd_pct: number;
   is_comfortable: boolean;
@@ -150,6 +163,13 @@ export interface SimulationSummary {
   peak_indoor_temp_c: number;
   avg_indoor_temp_c: number;
   min_indoor_temp_c: number;
+  daytime_avg_indoor_temp_c?: number;
+  nighttime_avg_indoor_temp_c?: number;
+  nighttime_min_indoor_temp_c?: number;
+  sunset_temp_drop_c?: number;
+  total_daily_solar_captured_kwh?: number;
+  total_daily_heat_loss_kwh?: number;
+  net_thermal_balance_kwh?: number;
   indoor_temperature_swing_c: number;
   peak_ambient_temp_c: number;
   thermal_damping_pct: number;
@@ -200,6 +220,9 @@ export interface ParetoCandidate {
   avg_indoor_temp: number;
   peak_indoor_temp: number;
   fitness_score: number;
+  utopia_distance?: number;
+  score_penalty?: number;
+  recommendation_type?: string;
   rationale?: string;
 }
 
@@ -259,4 +282,141 @@ export interface DigitalTwinConfigResponse {
   };
   camera_presets: Record<string, { position: [number, number, number]; target: [number, number, number] }>;
   airflow_vectors?: Array<{ start: number[]; end: number[]; speed: number; direction_deg: number }>;
+}
+
+// -------------------------------------------------------------
+// TVI (Thermal Vulnerability Index) Types
+// -------------------------------------------------------------
+export interface StateTVI {
+  state_name: string;
+  state_code: string;
+  region: string;
+  dominant_climate: string;
+  tvi_score: number;
+  category: 'Very Low' | 'Low' | 'Moderate' | 'High' | 'Very High' | string;
+  variables: {
+    heat_exposure: number;
+    extreme_heat: number;
+    thermal_stress: number;
+    cooling_burden: number;
+    population_vulnerability: number;
+    building_vulnerability: number;
+    adaptive_capacity: number;
+  };
+  weights_used: Record<string, number>;
+  key_hazard_profiles: string[];
+  passive_priorities: string[];
+  confidence: string;
+  data_year: number;
+  disclaimer: string;
+  rank?: number;
+}
+
+export interface TVISourceItem {
+  variable_id: string;
+  variable_name: string;
+  primary_source: string;
+  source_url: string;
+  publication_year: number;
+  data_year_range: string;
+  spatial_resolution: string;
+  units: string;
+  methodology: string;
+  limitations: string;
+}
+
+export interface AllStatesTVIResponse {
+  total_states: number;
+  ranking_basis: string;
+  disclaimer: string;
+  states_ranked: StateTVI[];
+  sources: TVISourceItem[];
+}
+
+// -------------------------------------------------------------
+// Recommendation Engine Types
+// -------------------------------------------------------------
+export interface RecommendationItem {
+  item: string;
+  recommended_option: string;
+  material_id?: string;
+  score: number;
+  sub_scores?: {
+    thermal_suitability: number;
+    cost_suitability: number;
+    climate_resilience: number;
+  };
+  reason: string;
+  thermal_benefit: string;
+  cost_impact: string;
+  confidence: string;
+  data_sources: string[];
+}
+
+export interface ConstructionMethodItem {
+  system_id: string;
+  name: string;
+  archetype: string;
+  deployment_speed_days: number;
+  labor_skill: string;
+  embodied_carbon: string;
+  thermal_inertia: string;
+  base_cost_inr_m2: number;
+  description: string;
+  score: number;
+  sub_scores: {
+    thermal_suitability: number;
+    cost_suitability: number;
+    disaster_resilience: number;
+    constructability_speed: number;
+  };
+}
+
+export interface RecommendationResponse {
+  climate_zone: string;
+  state_code?: string;
+  budget_level: string;
+  disaster_mode?: string;
+  material_recommendations: RecommendationItem[];
+  construction_recommendation: {
+    best_construction_method: ConstructionMethodItem;
+    ranked_methods: ConstructionMethodItem[];
+    recommendation_summary: string;
+  };
+  climate_targets: Record<string, any>;
+}
+
+// -------------------------------------------------------------
+// Policy & Compliance Types
+// -------------------------------------------------------------
+export interface ComplianceRuleResult {
+  id: string;
+  jurisdiction: string;
+  code_name: string;
+  category: string;
+  clause: string;
+  requirement: string;
+  actual_value: any;
+  required_threshold: string;
+  status: 'PASS' | 'REVIEW' | 'FAIL' | 'NOT_VERIFIED' | string;
+  reason: string;
+  remediation: string;
+  source: string;
+  source_url: string;
+  last_verified: string;
+}
+
+export interface ComplianceCheckResponse {
+  state: string;
+  building_type: string;
+  overall_status: string;
+  summary: {
+    total_rules_checked: number;
+    pass: number;
+    review: number;
+    fail: number;
+    not_verified: number;
+  };
+  results: ComplianceRuleResult[];
+  disclaimer: string;
 }

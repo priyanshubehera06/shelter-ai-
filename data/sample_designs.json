@@ -1,8 +1,27 @@
 {
   "baseline_designs": [
     {
+      "id": "design_ladakh_passive_solar",
+      "name": "Design 1 (Ladakh Passive Solar Heated Shelter)",
+      "archetype": "High-Altitude Cold Passive",
+      "dimensions": {"length_m": 7.0, "width_m": 5.0, "height_m": 2.8},
+      "roof_type": "pitched",
+      "roof_pitch_deg": 20.0,
+      "wall_mat_id": "trombe_wall_mass",
+      "wall_thickness_cm": 30.0,
+      "roof_mat_id": "roof_insulated_timber_deck",
+      "insulation_mat_id": "insulation_sheep_wool",
+      "insulation_thickness_cm": 7.5,
+      "glazing_mat_id": "glazing_double",
+      "floor_mat_id": "floor_insulated_screed",
+      "door_mat_id": "door_solid_timber",
+      "wwr_pct": 20.0,
+      "overhang_m": 0.5,
+      "orientation_deg": 180.0
+    },
+    {
       "id": "design_baseline_cgi",
-      "name": "Design 1 (Baseline Uninsulated CGI)",
+      "name": "Design 2 (Baseline Uninsulated CGI Shelter)",
       "archetype": "Emergency Relief",
       "dimensions": {"length_m": 6.0, "width_m": 4.0, "height_m": 2.8},
       "roof_type": "pitched",
@@ -13,13 +32,15 @@
       "insulation_mat_id": null,
       "insulation_thickness_cm": 0.0,
       "glazing_mat_id": "glazing_single",
+      "floor_mat_id": "floor_concrete_screed",
+      "door_mat_id": "door_solid_timber",
       "wwr_pct": 15.0,
       "overhang_m": 0.3,
       "orientation_deg": 90.0
     },
     {
       "id": "design_optimized_cseb",
-      "name": "Design 2 (Passive Optimized Earth & Insulated Roof)",
+      "name": "Design 3 (Passive Optimized Earth & Insulated Roof)",
       "archetype": "Transitional Resilient",
       "dimensions": {"length_m": 6.0, "width_m": 4.0, "height_m": 2.8},
       "roof_type": "pitched",
@@ -30,13 +51,15 @@
       "insulation_mat_id": "insulation_rockwool",
       "insulation_thickness_cm": 5.0,
       "glazing_mat_id": "glazing_double",
+      "floor_mat_id": "floor_concrete_screed",
+      "door_mat_id": "door_solid_timber",
       "wwr_pct": 12.0,
       "overhang_m": 0.8,
       "orientation_deg": 0.0
     },
     {
       "id": "design_bamboo_ventilated",
-      "name": "Design 3 (Lightweight High-Ventilation Bamboo)",
+      "name": "Design 4 (Lightweight High-Ventilation Bamboo)",
       "archetype": "Warm-Humid Eco",
       "dimensions": {"length_m": 8.0, "width_m": 3.0, "height_m": 3.2},
       "roof_type": "monoslope",
@@ -47,6 +70,8 @@
       "insulation_mat_id": null,
       "insulation_thickness_cm": 0.0,
       "glazing_mat_id": "glazing_single",
+      "floor_mat_id": "floor_terracotta_tile",
+      "door_mat_id": "door_bamboo_board",
       "wwr_pct": 25.0,
       "overhang_m": 1.0,
       "orientation_deg": 0.0
