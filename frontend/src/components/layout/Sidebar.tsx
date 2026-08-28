@@ -45,6 +45,7 @@ export const Sidebar: React.FC = () => {
           </div>
         </div>
 
+
         {/* Navigation Links */}
         <nav className="p-3 space-y-1">
           <div className="px-3 py-1.5 text-[10px] font-semibold tracking-wider text-slate-400 uppercase font-mono">

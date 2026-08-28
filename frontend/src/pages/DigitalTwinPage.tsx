@@ -5,6 +5,7 @@ import { DigitalTwinCanvas } from '../components/digitalTwin/DigitalTwinCanvas';
 import { Card } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import { Badge } from '../components/ui/Badge';
+import { SolarOrientationControl } from '../components/ui/SolarOrientationControl';
 import {
   Activity,
   Sun,
@@ -47,7 +48,9 @@ export const DigitalTwinPage: React.FC = () => {
     setIsSimulating,
     thermalMassLevel,
     setThermalMassLevel,
-    updateGeometry
+    updateGeometry,
+    customClimateRecords,
+    climateDataMode
   } = useShelterStore();
 
   const [activeViewMode, setActiveViewMode] = useState<'normal' | 'solar' | 'thermal' | 'heat_flow' | 'envelope'>('normal');
@@ -62,6 +65,7 @@ export const DigitalTwinPage: React.FC = () => {
         materials: currentDesign.materials,
         occupants: currentDesign.occupants,
         thermal_mass_level: thermalMassLevel,
+        custom_climate_records: customClimateRecords || undefined,
       });
       setSimulationResult(res);
     } catch (e) {
@@ -70,6 +74,7 @@ export const DigitalTwinPage: React.FC = () => {
       setIsSimulating(false);
     }
   };
+
 
   useEffect(() => {
     if (!simulationResult) {
@@ -123,33 +128,13 @@ export const DigitalTwinPage: React.FC = () => {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
         {/* Left Column: Quick Parameters */}
         <div className="lg:col-span-3 space-y-4">
-          <Card className="space-y-4 p-4 text-xs">
-            <div className="flex items-center justify-between border-b border-surface-border pb-2">
-              <span className="font-bold text-white uppercase tracking-wider flex items-center gap-1.5">
-                <Compass className="w-4 h-4 text-emerald-400" />
-                <span>Orientation & Sizing</span>
-              </span>
-              <span className="font-mono text-emerald-400 font-bold">{currentDesign.geometry.orientation_deg}°</span>
-            </div>
+          {/* Solar Orientation Control */}
+          <SolarOrientationControl
+            value={currentDesign.geometry.orientation_deg}
+            onChange={(val) => updateGeometry({ orientation_deg: val })}
+          />
 
-            <div className="space-y-2">
-              <label className="text-slate-400 text-[11px] block">Solar Azimuth Orientation (180° = True South)</label>
-              <input
-                type="range"
-                min="0"
-                max="360"
-                step="15"
-                value={currentDesign.geometry.orientation_deg}
-                onChange={(e) => updateGeometry({ orientation_deg: Number(e.target.value) })}
-                className="w-full h-1.5 bg-surface-border rounded-lg appearance-none cursor-pointer accent-emerald-500"
-              />
-              <div className="flex justify-between text-[10px] text-slate-400 font-mono">
-                <span>0° N</span>
-                <span>90° E</span>
-                <span className="text-emerald-400 font-bold">180° S</span>
-                <span>270° W</span>
-              </div>
-            </div>
+          <Card className="space-y-4 p-4 text-xs">
 
             <div className="space-y-2 pt-2 border-t border-surface-border">
               <label className="text-slate-400 text-[11px] block font-bold text-white">Thermal Mass Core Level</label>

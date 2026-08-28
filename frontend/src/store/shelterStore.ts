@@ -26,6 +26,8 @@ interface ShelterState {
     wind_speed: number;
     relative_humidity: number;
   } | null;
+  customClimateRecords: any[] | null;
+  climateDataMode: 'live' | 'historical' | 'manual';
   setLocationId: (id: string) => void;
   setSelectedState: (state: string) => void;
   setMonth: (month: number) => void;
@@ -33,6 +35,9 @@ interface ShelterState {
   setActiveStateTVI: (tvi: StateTVI | null) => void;
   setAllStatesTVI: (list: StateTVI[]) => void;
   setCustomClimateInputs: (inputs: ShelterState['customClimateInputs']) => void;
+  setCustomClimateRecords: (records: any[] | null) => void;
+  setClimateDataMode: (mode: 'live' | 'historical' | 'manual') => void;
+
 
   // Active Parametric Design
   currentDesign: ShelterDesign;
@@ -101,6 +106,8 @@ export const useShelterStore = create<ShelterState>((set) => ({
   activeStateTVI: null,
   allStatesTVI: [],
   customClimateInputs: null,
+  customClimateRecords: null,
+  climateDataMode: 'live',
 
   setLocationId: (id) => {
     let state = 'Ladakh';
@@ -126,6 +133,9 @@ export const useShelterStore = create<ShelterState>((set) => ({
   setActiveStateTVI: (tvi) => set({ activeStateTVI: tvi }),
   setAllStatesTVI: (list) => set({ allStatesTVI: list }),
   setCustomClimateInputs: (inputs) => set({ customClimateInputs: inputs }),
+  setCustomClimateRecords: (records) => set({ customClimateRecords: records }),
+  setClimateDataMode: (mode) => set({ climateDataMode: mode }),
+
 
   currentDesign: {
     id: 'design_ladakh_passive_solar',

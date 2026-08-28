@@ -1,9 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { useShelterStore } from '../../store/shelterStore';
-import { fetchLocations, fetchIPLocation, runSimulation } from '../../api/endpoints';
-import { Button } from '../ui/Button';
+import { fetchLocations, fetchIPLocation } from '../../api/endpoints';
 import { Badge } from '../ui/Badge';
-import { MapPin, Sun, Zap, Crosshair } from 'lucide-react';
+import { MapPin, Sun, Crosshair } from 'lucide-react';
 
 export const Header: React.FC = () => {
   const {
@@ -13,11 +12,6 @@ export const Header: React.FC = () => {
     setLocationsList,
     setLocationId,
     setMonth,
-    currentDesign,
-    isSimulating,
-    setIsSimulating,
-    setSimulationResult,
-    simulationResult
   } = useShelterStore();
 
   const [isDetectingIp, setIsDetectingIp] = useState(false);
@@ -28,7 +22,14 @@ export const Header: React.FC = () => {
       .catch((err) => console.error('Failed to fetch locations:', err));
   }, [setLocationsList]);
 
-  const activeLoc = locationsList.find((l) => l.id === selectedLocationId) || locationsList[0];
+  const activeLoc =
+    locationsList.find(
+      (l) =>
+        l.id === selectedLocationId ||
+        (selectedLocationId.includes('leh') && (l.id.includes('leh') || l.city?.toLowerCase() === 'leh'))
+    ) ||
+    locationsList.find((l) => l.city?.toLowerCase() === 'leh' || l.id.includes('leh')) ||
+    locationsList[0];
 
   const handleDetectIP = async () => {
     setIsDetectingIp(true);
@@ -41,24 +42,6 @@ export const Header: React.FC = () => {
       console.error('IP detection error:', e);
     } finally {
       setIsDetectingIp(false);
-    }
-  };
-
-  const handleQuickSimulate = async () => {
-    setIsSimulating(true);
-    try {
-      const res = await runSimulation({
-        location_id: selectedLocationId,
-        month: selectedMonth,
-        geometry: currentDesign.geometry,
-        materials: currentDesign.materials,
-        occupants: currentDesign.occupants,
-      });
-      setSimulationResult(res);
-    } catch (e) {
-      console.error('Simulation error:', e);
-    } finally {
-      setIsSimulating(false);
     }
   };
 
@@ -116,33 +99,6 @@ export const Header: React.FC = () => {
             ))}
           </select>
         </div>
-      </div>
-
-      {/* Quick Telemetry & Simulation Trigger */}
-      <div className="flex items-center gap-4">
-        {simulationResult && (
-          <div className="hidden md:flex items-center gap-3 text-xs bg-emerald-950/30 border border-emerald-500/20 px-3 py-1.5 rounded-lg">
-            <span className="text-slate-400">Comfort:</span>
-            <span className="font-mono font-bold text-emerald-400">
-              {simulationResult.summary.comfort_score}%
-            </span>
-            <span className="text-slate-600">|</span>
-            <span className="text-slate-400">CapEx:</span>
-            <span className="font-mono font-bold text-slate-200">
-              ₹{simulationResult.summary.total_capex_cost_inr.toLocaleString()}
-            </span>
-          </div>
-        )}
-
-        <Button
-          size="sm"
-          variant="primary"
-          icon={<Zap className="w-3.5 h-3.5" />}
-          isLoading={isSimulating}
-          onClick={handleQuickSimulate}
-        >
-          Run Physics Sim
-        </Button>
       </div>
     </header>
   );

@@ -138,6 +138,7 @@ export const runSimulation = async (payload: {
   materials: MaterialSelection;
   occupants?: number;
   thermal_mass_level?: string;
+  custom_climate_records?: any[];
 }): Promise<SimulationResponse> => {
   const { data } = await apiClient.post<SimulationResponse>('/simulation/run', payload);
   return data;
@@ -150,10 +151,30 @@ export const runWhatIfComparison = async (payload: {
   baseline_materials: MaterialSelection;
   modified_materials: MaterialSelection;
   occupants?: number;
+  custom_climate_records?: any[];
 }): Promise<WhatIfCompareResponse> => {
   const { data } = await apiClient.post<WhatIfCompareResponse>('/simulation/what-if', payload);
   return data;
 };
+
+
+export const exportAnsysDeck = async (payload: {
+  location_id?: string;
+  month?: number;
+  geometry: GeometryParams;
+  materials: MaterialSelection;
+  occupants?: number;
+}): Promise<{
+  shelter_name: string;
+  location: string;
+  pyansys_fluent_script: string;
+  ansys_apdl_deck: string;
+  instructions: string;
+}> => {
+  const { data } = await apiClient.post('/simulation/export-ansys', payload);
+  return data;
+};
+
 
 // -------------------------------------------------------------
 // Optimization APIs
@@ -186,10 +207,10 @@ export const fetchDigitalTwinConfig = async (payload: {
 };
 
 // -------------------------------------------------------------
-// Explainability & PDF
-// -------------------------------------------------------------
-export const fetchExplanation = async (design: ShelterDesign): Promise<{ explanation: string }> => {
-  const { data } = await apiClient.post<{ explanation: string }>('/results/explain', design);
+import { ExplainabilityResult } from '../types';
+
+export const fetchExplanation = async (design: ShelterDesign): Promise<ExplainabilityResult> => {
+  const { data } = await apiClient.post<ExplainabilityResult>('/results/explain', design);
   return data;
 };
 

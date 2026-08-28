@@ -86,7 +86,7 @@ def get_all_locations() -> List[LocationInfo]:
             "desc": "Mountain temperate climate with cool summers and cold winters."
         },
         "srinagar": {
-            "t_max": 31.0, "t_min": -3.0, "rh": 65.0, "solar": 870.0,
+            "t_max": 30.0, "t_min": -2.0, "rh": 70.0, "solar": 850.0,
             "desc": "Cold valley climate with freezing winter months."
         },
         "guwahati": {
@@ -106,7 +106,7 @@ def get_all_locations() -> List[LocationInfo]:
         city_name = info.get("city", key.split(",")[0].strip())
         state_name = info.get("state", "")
         zone = info.get("zone", "Composite")
-        loc_id = _slugify(city_name)
+        loc_id = "leh_ladakh" if city_name.lower() == "leh" else _slugify(city_name)
         
         # Avoid duplicate ids
         if loc_id in seen_ids:
@@ -114,7 +114,7 @@ def get_all_locations() -> List[LocationInfo]:
         seen_ids.add(loc_id)
         
         # Fetch benchmark or estimate from climate zone
-        bench = benchmarks.get(loc_id, {})
+        bench = benchmarks.get(loc_id, benchmarks.get(_slugify(city_name), {}))
         
         t_max = bench.get("t_max", 38.0 if "Hot" in zone else 33.0 if "Warm" in zone else 24.0 if "Cold" in zone else 35.0)
         t_min = bench.get("t_min", 8.0 if "Arid" in zone else 20.0 if "Humid" in zone else 0.0 if "Cold" in zone else 14.0)
@@ -144,8 +144,11 @@ def get_all_locations() -> List[LocationInfo]:
 def get_location_by_id(location_id: str) -> Optional[LocationInfo]:
     """Retrieves single location metadata by ID or city name."""
     loc_clean = location_id.lower().strip().replace("-", "_").replace(" ", "_")
-    for loc in get_all_locations():
-        if loc.id.lower() == loc_clean or loc_clean in loc.id.lower() or loc.city and loc_clean in loc.city.lower():
+    all_locs = get_all_locations()
+    for loc in all_locs:
+        if loc.id.lower() == loc_clean or (loc_clean in ["leh", "leh_ladakh", "ladakh"] and "leh" in loc.id.lower()):
+            return loc
+        if loc_clean in loc.id.lower() or (loc.city and loc_clean in loc.city.lower()):
             return loc
     return None
 
@@ -176,16 +179,16 @@ def detect_user_ip_location() -> IPLocationResponse:
     )
 
 
-def analyze_climate(location_id: str = "sambalpur", month: int = 5) -> ClimateAnalysisResponse:
+def analyze_climate(location_id: str = "leh_ladakh", month: int = 1) -> ClimateAnalysisResponse:
     """Performs deep climate intelligence analysis on the location and month."""
     loc = get_location_by_id(location_id)
     loc_name = loc.name if loc else location_id.title()
-    loc_zone = loc.region_type if loc else "Composite"
-    loc_lat = loc.lat if loc else 21.46
-    loc_lon = loc.lon if loc else 83.98
+    loc_zone = loc.region_type if loc else "Cold & High-Altitude"
+    loc_lat = loc.lat if loc else 34.15
+    loc_lon = loc.lon if loc else 77.58
     
-    # Load 24-hr representative diurnal cycle from physics engine
-    records = get_climate_profile(month=month)
+    # Load 24-hr representative diurnal cycle from physics engine for target location
+    records = get_climate_profile(location_id=loc.id if loc else location_id, month=month)
     hourly_objs: List[HourlyClimateRecord] = []
     
     temps = []

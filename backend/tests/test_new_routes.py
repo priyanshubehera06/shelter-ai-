@@ -75,3 +75,70 @@ def test_api_compliance_check():
     assert "overall_status" in data
     assert "results" in data
     assert len(data["results"]) > 0
+
+
+def test_api_export_ansys():
+    payload = {
+        "location_id": "leh_ladakh",
+        "month": 1,
+        "geometry": {
+            "length_m": 7.0,
+            "width_m": 5.0,
+            "height_m": 2.8,
+            "roof_type": "pitched",
+            "roof_pitch_deg": 20.0,
+            "wall_thickness_cm": 30.0,
+            "wwr_pct": 20.0,
+            "overhang_m": 0.6,
+            "orientation_deg": 180.0,
+        },
+        "materials": {
+            "wall_mat_id": "trombe_wall_mass",
+            "wall_thickness_cm": 30.0,
+            "roof_mat_id": "roof_insulated_timber_deck",
+            "insulation_mat_id": "insulation_glasswool",
+            "insulation_thickness_cm": 10.0,
+            "glazing_mat_id": "glazing_double",
+        },
+        "occupants": 4
+    }
+    res = client.post("/api/simulation/export-ansys", json=payload)
+    assert res.status_code == 200
+    data = res.json()
+    assert "pyansys_fluent_script" in data
+    assert "ansys_apdl_deck" in data
+    assert "pyfluent" in data["pyansys_fluent_script"]
+    assert "/PREP7" in data["ansys_apdl_deck"]
+
+
+def test_api_export_pdf():
+    payload = {
+        "id": "test_ladakh",
+        "name": "Ladakh Passive Solar Shelter",
+        "location_id": "leh_ladakh",
+        "geometry": {
+            "length_m": 7.0,
+            "width_m": 5.0,
+            "height_m": 2.8,
+            "roof_type": "pitched",
+            "roof_pitch_deg": 20.0,
+            "wall_thickness_cm": 30.0,
+            "wwr_pct": 20.0,
+            "overhang_m": 0.6,
+            "orientation_deg": 180.0,
+        },
+        "materials": {
+            "wall_mat_id": "trombe_wall_mass",
+            "wall_thickness_cm": 30.0,
+            "roof_mat_id": "roof_insulated_timber_deck",
+            "insulation_mat_id": "insulation_glasswool",
+            "insulation_thickness_cm": 10.0,
+            "glazing_mat_id": "glazing_double",
+        },
+        "occupants": 4
+    }
+    res = client.post("/api/results/pdf", json=payload)
+    assert res.status_code == 200
+    assert res.headers["content-type"] == "application/pdf"
+    assert len(res.content) > 500
+

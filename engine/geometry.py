@@ -67,6 +67,11 @@ class ShelterGeometry:
         # 6. Ventilation Openings
         self._custom_vent_area = float(ventilation_area_m2) if ventilation_area_m2 is not None else None
 
+    @property
+    def wall_thickness_cm(self) -> float:
+        """Wall thickness in centimeters."""
+        return round(self.wall_thickness * 100.0, 2)
+
     # ----------------------------------------------------------------------
     # Core Spatial & Envelope Calculations
     # ----------------------------------------------------------------------

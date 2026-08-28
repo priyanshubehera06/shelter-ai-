@@ -17,47 +17,53 @@ export const WindowsMesh: React.FC<WindowsMeshProps> = ({
   const frame = getPBRMaterial('frame_aluminum');
 
   const winW = Math.max(1.0, Math.min(1.8, (L * (wwr_pct / 100)) / 1.2));
-  const winH = 1.1;
-  const winY = plinthHeight + 0.9 + winH / 2;
+  const winH = Math.min(1.2, H - 1.3);
+  const winSill = 0.9;
+  const winY = plinthHeight + winSill + winH / 2;
+  const winX = L / 4; // Matches front window aperture in WallsMesh
 
   return (
     <group>
       {/* 1. FRONT WINDOW (SOUTH: +Z) */}
-      <group position={[L / 4 + 0.1, winY, W / 2 + 0.01]}>
+      <group position={[winX, winY, W / 2 + 0.01]}>
         {/* Transparent Glazing Glass Pane */}
         <mesh castShadow>
-          <boxGeometry args={[winW, winH, 0.02]} />
+          <boxGeometry args={[winW - 0.04, winH - 0.04, 0.02]} />
           <meshPhysicalMaterial
             color={glass.color}
             roughness={glass.roughness}
             metalness={glass.metalness}
-            transmission={0.85}
-            thickness={0.05}
+            transmission={0.9}
+            thickness={0.06}
             opacity={glass.opacity || 0.45}
             transparent={true}
           />
         </mesh>
 
-        {/* Outer Aluminum Frame */}
+        {/* Outer Frame Casing (Solid Aluminum, NO Wireframe) */}
         <mesh>
-          <boxGeometry args={[winW + 0.08, winH + 0.08, 0.06]} />
-          <meshStandardMaterial color={frame.color} metalness={frame.metalness} roughness={frame.roughness} wireframe />
+          <boxGeometry args={[winW, winH, 0.05]} />
+          <meshStandardMaterial
+            color="#1e293b"
+            metalness={0.8}
+            roughness={0.2}
+          />
         </mesh>
 
-        {/* Horizontal & Vertical Muntin Dividers */}
-        <mesh>
-          <boxGeometry args={[winW, 0.03, 0.03]} />
-          <meshStandardMaterial color="#2e3440" metalness={0.7} roughness={0.3} />
+        {/* Architectural Cross-Muntin Dividers */}
+        <mesh position={[0, 0, 0.01]}>
+          <boxGeometry args={[winW - 0.04, 0.025, 0.02]} />
+          <meshStandardMaterial color="#334155" metalness={0.7} roughness={0.3} />
         </mesh>
-        <mesh>
-          <boxGeometry args={[0.03, winH, 0.03]} />
-          <meshStandardMaterial color="#2e3440" metalness={0.7} roughness={0.3} />
+        <mesh position={[0, 0, 0.01]}>
+          <boxGeometry args={[0.025, winH - 0.04, 0.02]} />
+          <meshStandardMaterial color="#334155" metalness={0.7} roughness={0.3} />
         </mesh>
 
         {/* Exterior Window Sill Ledge */}
-        <mesh position={[0, -winH / 2 - 0.03, 0.04]}>
-          <boxGeometry args={[winW + 0.16, 0.05, 0.12]} />
-          <meshStandardMaterial color="#4c566a" roughness={0.7} />
+        <mesh position={[0, -winH / 2 - 0.025, 0.05]}>
+          <boxGeometry args={[winW + 0.1, 0.04, 0.12]} />
+          <meshStandardMaterial color="#475569" roughness={0.7} />
         </mesh>
       </group>
 
@@ -65,26 +71,38 @@ export const WindowsMesh: React.FC<WindowsMeshProps> = ({
       <group position={[0, winY, -W / 2 - 0.01]}>
         {/* Transparent Glazing Glass Pane */}
         <mesh castShadow>
-          <boxGeometry args={[winW, winH, 0.02]} />
+          <boxGeometry args={[winW - 0.04, winH - 0.04, 0.02]} />
           <meshPhysicalMaterial
             color={glass.color}
             roughness={glass.roughness}
             metalness={glass.metalness}
-            transmission={0.85}
-            thickness={0.05}
+            transmission={0.9}
+            thickness={0.06}
             opacity={glass.opacity || 0.45}
             transparent={true}
           />
         </mesh>
-        {/* Outer Aluminum Frame */}
+
+        {/* Outer Frame Casing */}
         <mesh>
-          <boxGeometry args={[winW + 0.08, winH + 0.08, 0.06]} />
-          <meshStandardMaterial color={frame.color} metalness={frame.metalness} roughness={frame.roughness} wireframe />
+          <boxGeometry args={[winW, winH, 0.05]} />
+          <meshStandardMaterial color="#1e293b" metalness={0.8} roughness={0.2} />
         </mesh>
+
+        {/* Cross-Muntin */}
+        <mesh position={[0, 0, -0.01]}>
+          <boxGeometry args={[winW - 0.04, 0.025, 0.02]} />
+          <meshStandardMaterial color="#334155" metalness={0.7} roughness={0.3} />
+        </mesh>
+        <mesh position={[0, 0, -0.01]}>
+          <boxGeometry args={[0.025, winH - 0.04, 0.02]} />
+          <meshStandardMaterial color="#334155" metalness={0.7} roughness={0.3} />
+        </mesh>
+
         {/* Sill Ledge */}
-        <mesh position={[0, -winH / 2 - 0.03, -0.04]}>
-          <boxGeometry args={[winW + 0.16, 0.05, 0.12]} />
-          <meshStandardMaterial color="#4c566a" roughness={0.7} />
+        <mesh position={[0, -winH / 2 - 0.025, -0.05]}>
+          <boxGeometry args={[winW + 0.1, 0.04, 0.12]} />
+          <meshStandardMaterial color="#475569" roughness={0.7} />
         </mesh>
       </group>
     </group>

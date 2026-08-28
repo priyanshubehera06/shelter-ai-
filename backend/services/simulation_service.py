@@ -232,3 +232,55 @@ def compare_what_if_scenarios(req: WhatIfCompareRequest) -> WhatIfCompareRespons
         baseline_summary=base_res.summary,
         modified_summary=mod_res.summary
     )
+
+
+def generate_ansys_export_service(req: SimulationRequest) -> Dict[str, Any]:
+    """Generates PyANSYS Fluent Python script and APDL macro deck for ANSYS CFD validation."""
+    from engine.ansys_export import generate_pyansys_fluent_script, generate_ansys_apdl_deck
+    
+    geom = ShelterGeometry(
+        length_m=req.geometry.length_m,
+        width_m=req.geometry.width_m,
+        height_m=req.geometry.height_m,
+        roof_type=req.geometry.roof_type,
+        roof_pitch_deg=req.geometry.roof_pitch_deg,
+        wall_thickness_cm=req.geometry.wall_thickness_cm,
+        wwr_pct=req.geometry.wwr_pct,
+        overhang_m=req.geometry.overhang_m,
+        orientation_deg=req.geometry.orientation_deg,
+    )
+    
+    climate_info = {
+        "lat": 34.1526 if "ladakh" in (req.location_id or "").lower() else 21.4667,
+        "lon": 77.5771 if "ladakh" in (req.location_id or "").lower() else 83.9833,
+        "month": req.month or 1,
+        "day": 15,
+        "t_min_c": -15.0 if "ladakh" in (req.location_id or "").lower() else 10.0,
+    }
+    
+    mat_dict = req.materials.model_dump() if hasattr(req.materials, "model_dump") else req.materials.dict()
+    
+    pyfluent_script = generate_pyansys_fluent_script(
+        geometry=geom,
+        materials=mat_dict,
+        climate_data=climate_info,
+        simulation_summary={}
+    )
+    
+    apdl_deck = generate_ansys_apdl_deck(
+        geometry=geom,
+        materials=mat_dict,
+        climate_data=climate_info
+    )
+    
+    return {
+        "shelter_name": "Ladakh Passive Thermal Shelter Model",
+        "location": req.location_id or "leh_ladakh",
+        "pyansys_fluent_script": pyfluent_script,
+        "ansys_apdl_deck": apdl_deck,
+        "instructions": (
+            "1. To run 3D CHT in PyANSYS Fluent: `pip install ansys-fluent-core` and execute script.\n"
+            "2. To run thermal diffusion in MAPDL: Read the APDL macro into ANSYS Mechanical APDL / PyMAPDL."
+        )
+    }
+

@@ -121,7 +121,8 @@ export const OptimizationPage: React.FC = () => {
   return (
     <div className="max-w-6xl mx-auto space-y-6 animate-in fade-in duration-300">
       <SectionHeader
-        title="06. Multi-Objective Pareto Optimization (NSGA-II)"
+        badge="07. PARETO OPTIMIZATION (NSGA-II)"
+        title="Multi-Objective Pareto Optimization"
         subtitle="Simultaneously optimizes Thermal Comfort (Maximize), Operational Energy Demand (Minimize), and CapEx Construction Cost (Minimize)"
         icon={<Target className="w-5 h-5 text-rose-400" />}
       />

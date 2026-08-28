@@ -5,6 +5,7 @@ import { Card } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import { SectionHeader } from '../components/ui/SectionHeader';
 import { Badge } from '../components/ui/Badge';
+
 import {
   ShieldCheck,
   MapPin,
@@ -33,8 +34,12 @@ export const HomePage: React.FC = () => {
     setLocationId('leh_ladakh');
     setMonth(1); // Winter January
     loadDesign({
+      id: 'design_ladakh_passive_solar',
       name: 'Ladakh Passive Solar Heated Residential Shelter',
-      archetype: 'Passive Solar Residential',
+      archetype: 'High-Altitude Cold Passive',
+      mode: 'normal',
+      disaster_mode: null,
+      migrant_modules: 1,
       geometry: {
         length_m: 7.0,
         width_m: 5.0,
@@ -67,52 +72,52 @@ export const HomePage: React.FC = () => {
 
   const workflowStages = [
     {
-      step: '01',
-      title: 'Climate & Atmospheric Profile',
-      desc: 'Ambient temperature, solar irradiance (GHI), wind speed, and diurnal temperature swing analysis with Ladakh case study presets.',
-      path: '/location',
+      step: '02',
+      title: 'Target Climate & Solar Pipeline',
+      desc: 'Live Open-Meteo API stream, historical EPW records, and user-defined boundary profiles for Ladakh and 50+ stations.',
+      path: '/climate',
       icon: <MapPin className="w-5 h-5 text-emerald-400" />,
       tag: 'Meteorology',
       tagVariant: 'emerald' as const,
     },
     {
-      step: '02',
-      title: 'Parametric Design Lab',
-      desc: 'Geometric sizing, True-South solar orientation compass (0°–360°), openings ratio, and thermal mass storage configuration.',
+      step: '03',
+      title: 'Parametric Shelter Design Lab',
+      desc: 'Geometric sizing, True-South solar orientation compass (0°–360°), openings ratio, and thermal mass configuration.',
       path: '/design',
       icon: <Hammer className="w-5 h-5 text-amber-400" />,
       tag: 'CAD & Sizing',
       tagVariant: 'amber' as const,
     },
     {
-      step: '03',
+      step: '04',
       title: 'Materials & Multi-Layer Construction',
-      desc: 'Composite envelope builder (Trombe wall + sheep wool insulation) and side-by-side material thermal inertia comparison.',
-      path: '/recommendations',
+      desc: 'Thermophysical material catalog, Phase Change Materials (PCM), vacuum insulation (VIP), and composite U-value calculator.',
+      path: '/materials',
       icon: <Layers className="w-5 h-5 text-sky-400" />,
       tag: 'Thermo-physics',
       tagVariant: 'sky' as const,
     },
     {
-      step: '04',
-      title: '3D Digital Twin Simulation',
-      desc: 'Interactive hardware-accelerated WebGL twin with real-time astronomical solar tracking, thermal heatmap, and heat-flow vectors.',
-      path: '/digital-twin',
+      step: '05',
+      title: '3D Simulation & Digital Twin',
+      desc: 'Interactive WebGL 3D twin, 24-hour diurnal thermal response curve (Tout vs Tin vs GHI), and hourly heat flux breakdown.',
+      path: '/simulate',
       icon: <Box className="w-5 h-5 text-emerald-400" />,
       tag: 'R3F WebGL',
       tagVariant: 'emerald' as const,
     },
     {
-      step: '05',
-      title: 'Design A vs B Comparison',
-      desc: 'Side-by-side scenario comparator evaluating retrofit options, insulation thicknesses, and avoided discomfort hours.',
-      path: '/what-if',
+      step: '06',
+      title: 'Comparative Thermal Design Studio',
+      desc: 'Side-by-side scenario comparator evaluating baseline uninsulated shelter vs. optimized passive Trombe wall retrofit.',
+      path: '/compare',
       icon: <GitCompare className="w-5 h-5 text-sky-400" />,
       tag: 'Sensitivity Matrix',
       tagVariant: 'sky' as const,
     },
     {
-      step: '06',
+      step: '07',
       title: 'Pareto Optimization (NSGA-II)',
       desc: 'Multi-objective genetic algorithm minimizing heat loss and CapEx cost while maximizing passive indoor thermal comfort.',
       path: '/optimization',
@@ -121,12 +126,12 @@ export const HomePage: React.FC = () => {
       tagVariant: 'rose' as const,
     },
     {
-      step: '07',
-      title: 'Certified Results & Scientific Audit',
-      desc: '24-hour diurnal thermal response curves, hourly component heat-flow breakdown, and downloadable certified PDF audit.',
+      step: '08',
+      title: 'Certified Results & ANSYS Export',
+      desc: 'Explainable physics decision audit, certified PDF export, and 1-click PyANSYS / APDL macro deck export.',
       path: '/results',
       icon: <Award className="w-5 h-5 text-emerald-400" />,
-      tag: 'Decision Support',
+      tag: 'ANSYS & Reports',
       tagVariant: 'emerald' as const,
     },
   ];
@@ -147,8 +152,8 @@ export const HomePage: React.FC = () => {
           </h1>
 
           <p className="text-slate-300 text-sm sm:text-base leading-relaxed">
-            Design and evaluate climate-responsive shelters for improved thermal comfort with reduced external energy requirements.
-            Investigate how solar radiation, geometry, orientation, thermal mass, and composite materials eliminate nighttime temperature drops in high-altitude cold regions.
+            Design and evaluate climate-responsive shelters for improved thermal comfort with zero or minimum external energy requirement.
+            Investigate how solar radiation, geometry, orientation, thermal mass, and composite materials eliminate nighttime temperature drops in Ladakh.
           </p>
 
           <div className="pt-2 flex flex-wrap items-center gap-3">
@@ -202,83 +207,54 @@ export const HomePage: React.FC = () => {
 
         <Card className="border-t-4 border-t-emerald-500 p-5 space-y-2">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold uppercase tracking-wider text-slate-400">03. Indoor Temperature Lift</span>
+            <span className="text-xs font-bold uppercase tracking-wider text-slate-400">03. Night Retention</span>
             <Thermometer className="w-5 h-5 text-emerald-400" />
           </div>
           <div className="text-2xl font-extrabold font-mono text-emerald-400">
-            +18.5 <span className="text-sm font-normal text-slate-400">°C vs Ambient</span>
+            +17.8 <span className="text-sm font-normal text-slate-400">°C Min</span>
           </div>
           <p className="text-xs text-slate-400 leading-relaxed">
-            Maintains comfortable indoor temperatures (17°C–22°C) without active heating during -15°C sub-zero winter nights.
+            Indoor temperature sustained comfortably above freezing despite -18°C sub-zero ambient night temperatures.
           </p>
         </Card>
       </div>
 
-      {/* Simplified Engineering Visual Flow */}
-      <Card className="p-6 space-y-4">
-        <h3 className="text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2">
-          <Activity className="w-4 h-4 text-emerald-400" />
-          <span>Passive Thermal Engineering Workflow</span>
-        </h3>
-
-        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-5 gap-3 text-center text-xs">
-          <div className="p-3 rounded-xl bg-surface-raised border border-surface-border">
-            <span className="font-bold text-slate-200">1. Climate & Solar</span>
-            <p className="text-[11px] text-slate-400 mt-1">NOAA solar radiation & sub-zero ambient</p>
-          </div>
-          <div className="p-3 rounded-xl bg-surface-raised border border-surface-border">
-            <span className="font-bold text-slate-200">2. Sizing & Orientation</span>
-            <p className="text-[11px] text-slate-400 mt-1">Parametric 3D CAD & True-South azimuth</p>
-          </div>
-          <div className="p-3 rounded-xl bg-surface-raised border border-surface-border">
-            <span className="font-bold text-slate-200">3. Multi-Layer Materials</span>
-            <p className="text-[11px] text-slate-400 mt-1">Trombe mass & high R-value insulation</p>
-          </div>
-          <div className="p-3 rounded-xl bg-surface-raised border border-surface-border">
-            <span className="font-bold text-slate-200">4. Transient RC Balance</span>
-            <p className="text-[11px] text-slate-400 mt-1">24-hour heat flow & Day/Night curves</p>
-          </div>
-          <div className="p-3 rounded-xl bg-surface-raised border border-surface-border col-span-2 sm:col-span-1">
-            <span className="font-bold text-emerald-400">5. Pareto Optimization</span>
-            <p className="text-[11px] text-slate-400 mt-1">Cost vs Comfort multi-objective search</p>
-          </div>
-        </div>
-      </Card>
-
-      {/* Computational Pipeline Modules */}
-      <div>
+      {/* Engineering Workflow Cards */}
+      <div className="space-y-4">
         <SectionHeader
-          title="Modular Platform Pipeline"
-          subtitle="Explore the 7 core computational modules of the ShelterAI platform"
-          icon={<ShieldCheck className="w-5 h-5 text-emerald-400" />}
+          badge="01. CERTIFIED WORKFLOW"
+          title="Certified Engineering Workflow"
+          subtitle="A systematic, physics-based sequence for high-altitude cold climate passive shelter design"
         />
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 mt-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
           {workflowStages.map((stage) => (
             <Card
               key={stage.step}
-              className="flex flex-col justify-between hover:border-emerald-500/40 transition-all cursor-pointer group"
               onClick={() => navigate(stage.path)}
+              className="cursor-pointer hover:border-emerald-500/50 hover:bg-surface-raised transition-all flex flex-col justify-between space-y-4"
             >
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
-                  <div className="p-2 rounded-xl bg-surface-raised border border-surface-border group-hover:border-emerald-500/30 transition-all">
-                    {stage.icon}
+                  <div className="flex items-center gap-2">
+                    <span className="font-mono text-xs font-bold text-slate-500">{stage.step}</span>
+                    <span className="text-slate-600">/</span>
+                    <span className="font-bold text-white text-sm">{stage.title}</span>
                   </div>
                   <Badge variant={stage.tagVariant} size="sm">
                     {stage.tag}
                   </Badge>
                 </div>
-                <h3 className="font-bold text-slate-100 text-sm group-hover:text-emerald-400 transition-colors">
-                  {stage.step}. {stage.title}
-                </h3>
-                <p className="text-xs text-slate-400 leading-relaxed">
-                  {stage.desc}
-                </p>
+                <p className="text-xs text-slate-400 leading-relaxed">{stage.desc}</p>
               </div>
-              <div className="pt-4 flex items-center justify-between text-xs font-semibold text-emerald-400 border-t border-surface-border mt-4">
-                <span>Launch Module</span>
-                <ArrowRight className="w-3.5 h-3.5 transform group-hover:translate-x-1 transition-transform" />
+
+              <div className="pt-3 border-t border-surface-border flex items-center justify-between text-xs font-medium text-slate-400 group-hover:text-emerald-400">
+                <div className="p-2 rounded-lg bg-surface-raised border border-surface-border">
+                  {stage.icon}
+                </div>
+                <span className="flex items-center gap-1 text-emerald-400 font-semibold">
+                  Open Module <ArrowRight className="w-3.5 h-3.5" />
+                </span>
               </div>
             </Card>
           ))}

@@ -420,3 +420,20 @@ export interface ComplianceCheckResponse {
   results: ComplianceRuleResult[];
   disclaimer: string;
 }
+
+export interface ExplainabilityPillar {
+  pillar: string;
+  title: string;
+  explanation: string;
+  icon: string;
+}
+
+export interface ExplainabilityResult {
+  candidate_id: string;
+  executive_summary: string;
+  explanations: ExplainabilityPillar[];
+  comfort_score?: number;
+  annual_energy_kwh?: number;
+  cost_inr?: number;
+}
+

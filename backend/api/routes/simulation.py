@@ -33,3 +33,14 @@ def execute_what_if_comparison(req: WhatIfCompareRequest):
         return compare_what_if_scenarios(req)
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Comparison error: {str(e)}")
+
+
+@router.post("/export-ansys")
+def export_ansys_deck(req: SimulationRequest):
+    """Generates parameter-driven PyANSYS Fluent and APDL input decks for CFD validation."""
+    try:
+        from backend.services.simulation_service import generate_ansys_export_service
+        return generate_ansys_export_service(req)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"ANSYS export error: {str(e)}")
+
