@@ -26,11 +26,13 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Register API routes under /api
+# Register API routes under both /api and / for compatibility with serverless reverse proxies
 app.include_router(api_router, prefix=settings.API_PREFIX)
+app.include_router(api_router)
 
 
 @app.get("/api/health", tags=["System"])
+@app.get("/health", tags=["System"])
 def health_check():
     """Health check endpoint to verify API and Engine readiness."""
     return {
