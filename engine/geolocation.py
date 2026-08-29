@@ -159,40 +159,64 @@ def get_city_climate_profile(city_name_key):
 
 def get_ip_location():
     """
-    Auto-detect location using IP Geolocation APIs with fallback options.
+    Auto-detect location using multiple reliable IP Geolocation APIs with resilient fallback options.
     """
-    apis = [
-        "http://ip-api.com/json/",
-        "https://ipapi.co/json/"
+    providers = [
+        ("https://ipwho.is/", lambda d: {
+            "city": d.get("city", "Unknown City"),
+            "region": d.get("region", ""),
+            "country": d.get("country", "India"),
+            "lat": float(d.get("latitude")),
+            "lon": float(d.get("longitude")),
+            "ip": d.get("ip", "Auto-detected"),
+            "source": "IP Geolocation (ipwho.is)"
+        } if d.get("success", False) else None),
+        ("http://ip-api.com/json/", lambda d: {
+            "city": d.get("city", "Unknown City"),
+            "region": d.get("regionName", d.get("region", "")),
+            "country": d.get("country", "India"),
+            "lat": float(d.get("lat")),
+            "lon": float(d.get("lon")),
+            "ip": d.get("query", "Auto-detected"),
+            "source": "IP Geolocation (ip-api)"
+        } if d.get("status") == "success" else None),
+        ("https://freeipapi.com/api/json", lambda d: {
+            "city": d.get("cityName", d.get("city", "Unknown City")),
+            "region": d.get("regionName", ""),
+            "country": d.get("countryName", "India"),
+            "lat": float(d.get("latitude")),
+            "lon": float(d.get("longitude")),
+            "ip": d.get("ipAddress", "Auto-detected"),
+            "source": "IP Geolocation (freeipapi)"
+        } if "latitude" in d and "longitude" in d and d.get("latitude") is not None else None),
+        ("https://ipapi.co/json/", lambda d: {
+            "city": d.get("city", "Unknown City"),
+            "region": d.get("region", ""),
+            "country": d.get("country_name", "India"),
+            "lat": float(d.get("latitude")),
+            "lon": float(d.get("longitude")),
+            "ip": d.get("ip", "Auto-detected"),
+            "source": "IP Geolocation (ipapi.co)"
+        } if "latitude" in d and "longitude" in d and not d.get("error") else None),
+        ("https://ipinfo.io/json", lambda d: {
+            "city": d.get("city", "Unknown City"),
+            "region": d.get("region", ""),
+            "country": d.get("country", "India"),
+            "lat": float(d.get("loc", "21.4669,83.9812").split(",")[0]),
+            "lon": float(d.get("loc", "21.4669,83.9812").split(",")[1]),
+            "ip": d.get("ip", "Auto-detected"),
+            "source": "IP Geolocation (ipinfo.io)"
+        } if "loc" in d else None)
     ]
     
-    for api_url in apis:
+    for api_url, parser in providers:
         try:
             req = urllib.request.Request(api_url, headers={'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'})
-            with urllib.request.urlopen(req, timeout=4) as response:
+            with urllib.request.urlopen(req, timeout=3) as response:
                 data = json.loads(response.read().decode())
-                
-                # ip-api.com format
-                if data.get("status") == "success":
-                    return {
-                        "city": data.get("city", "Unknown City"),
-                        "region": data.get("regionName", data.get("region", "")),
-                        "country": data.get("country", "India"),
-                        "lat": float(data.get("lat")),
-                        "lon": float(data.get("lon")),
-                        "source": "IP Geolocation"
-                    }
-                
-                # ipapi.co format
-                if "latitude" in data and "longitude" in data:
-                    return {
-                        "city": data.get("city", "Unknown City"),
-                        "region": data.get("region", ""),
-                        "country": data.get("country_name", "India"),
-                        "lat": float(data.get("latitude")),
-                        "lon": float(data.get("longitude")),
-                        "source": "IP Geolocation"
-                    }
+                parsed = parser(data)
+                if parsed and parsed.get("lat") is not None and parsed.get("lon") is not None:
+                    return parsed
         except Exception:
             continue
             
@@ -203,6 +227,7 @@ def get_ip_location():
         "country": "India",
         "lat": 21.4669,
         "lon": 83.9812,
+        "ip": "Fallback",
         "source": "Fallback Preset"
     }
 

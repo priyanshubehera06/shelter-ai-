@@ -2,7 +2,7 @@
 climate.py — REST API endpoints for Location and Climate Intelligence.
 """
 
-from typing import List
+from typing import List, Optional
 from fastapi import APIRouter, HTTPException, Query
 from backend.schemas.climate import LocationInfo, IPLocationResponse, ClimateAnalysisResponse
 from backend.services.climate_service import (
@@ -22,9 +22,12 @@ def list_locations():
 
 
 @router.get("/ip-location", response_model=IPLocationResponse)
-def get_current_ip_location():
-    """Auto-detects the client's geographic location via IP and resolves nearest Indian weather station."""
-    return detect_user_ip_location()
+def get_current_ip_location(
+    lat: Optional[float] = Query(None, description="Optional GPS latitude from client"),
+    lon: Optional[float] = Query(None, description="Optional GPS longitude from client")
+):
+    """Auto-detects the client's geographic location via GPS coordinates or IP and resolves nearest Indian weather station."""
+    return detect_user_ip_location(lat=lat, lon=lon)
 
 
 @router.get("/locations/{location_id}", response_model=LocationInfo)

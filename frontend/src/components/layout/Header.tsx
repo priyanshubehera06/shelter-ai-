@@ -2,16 +2,14 @@ import React, { useEffect, useState } from 'react';
 import { useShelterStore } from '../../store/shelterStore';
 import { fetchLocations, fetchIPLocation } from '../../api/endpoints';
 import { Badge } from '../ui/Badge';
-import { MapPin, Sun, Crosshair } from 'lucide-react';
+import { MapPin, Crosshair } from 'lucide-react';
 
 export const Header: React.FC = () => {
   const {
     selectedLocationId,
-    selectedMonth,
     locationsList,
     setLocationsList,
     setLocationId,
-    setMonth,
   } = useShelterStore();
 
   const [isDetectingIp, setIsDetectingIp] = useState(false);
@@ -45,14 +43,9 @@ export const Header: React.FC = () => {
     }
   };
 
-  const months = [
-    'January', 'February', 'March', 'April', 'May', 'June',
-    'July', 'August', 'September', 'October', 'November', 'December'
-  ];
-
   return (
     <header className="h-16 border-b border-surface-border bg-surface/90 backdrop-blur-md px-6 flex items-center justify-between sticky top-0 z-30">
-      {/* Location & Month Selector */}
+      {/* Location Selector */}
       <div className="flex items-center gap-3">
         <div className="flex items-center gap-2 bg-surface-raised px-3 py-1.5 rounded-lg border border-surface-border text-sm">
           <MapPin className="w-4 h-4 text-emerald-400 shrink-0" />
@@ -84,22 +77,8 @@ export const Header: React.FC = () => {
           <Crosshair className={`w-3.5 h-3.5 text-emerald-400 ${isDetectingIp ? 'animate-spin' : ''}`} />
           <span className="hidden md:inline">Auto-Detect IP</span>
         </button>
-
-        <div className="flex items-center gap-2 bg-surface-raised px-3 py-1.5 rounded-lg border border-surface-border text-sm">
-          <Sun className="w-4 h-4 text-amber-400 shrink-0" />
-          <select
-            value={selectedMonth}
-            onChange={(e) => setMonth(parseInt(e.target.value))}
-            className="bg-transparent text-slate-100 text-xs font-medium focus:outline-none cursor-pointer"
-          >
-            {months.map((m, idx) => (
-              <option key={idx + 1} value={idx + 1} className="bg-surface text-slate-100">
-                {m}
-              </option>
-            ))}
-          </select>
-        </div>
       </div>
     </header>
   );
 };
+

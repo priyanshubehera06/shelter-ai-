@@ -13,7 +13,7 @@ from engine.climate import (
     calculate_degree_days,
     validate_climate_data
 )
-from engine.geolocation import MAJOR_INDIAN_CITIES, get_ip_location
+from engine.geolocation import MAJOR_INDIAN_CITIES, get_ip_location, reverse_geocode
 from backend.schemas.climate import (
     LocationInfo,
     IPLocationResponse,
@@ -153,11 +153,25 @@ def get_location_by_id(location_id: str) -> Optional[LocationInfo]:
     return None
 
 
-def detect_user_ip_location() -> IPLocationResponse:
-    """Auto-detects user location via IP and maps to the nearest Indian city in catalog."""
-    ip_data = get_ip_location()
-    user_lat = float(ip_data.get("lat", 21.4669))
-    user_lon = float(ip_data.get("lon", 83.9812))
+def detect_user_ip_location(lat: Optional[float] = None, lon: Optional[float] = None) -> IPLocationResponse:
+    """Auto-detects user location via GPS coordinates or IP and maps to the nearest Indian city in catalog."""
+    if lat is not None and lon is not None:
+        user_lat = float(lat)
+        user_lon = float(lon)
+        geo_info = reverse_geocode(user_lat, user_lon)
+        ip_data = {
+            "ip": "Browser GPS",
+            "city": geo_info.get("city", "Detected Location"),
+            "region": geo_info.get("region", ""),
+            "country": geo_info.get("country", "India"),
+            "lat": user_lat,
+            "lon": user_lon,
+            "source": "Browser GPS / Geolocation"
+        }
+    else:
+        ip_data = get_ip_location()
+        user_lat = float(ip_data.get("lat", 21.4669))
+        user_lon = float(ip_data.get("lon", 83.9812))
     
     # Find nearest Indian city by Euclidean distance
     all_locs = get_all_locations()
@@ -166,16 +180,23 @@ def detect_user_ip_location() -> IPLocationResponse:
         key=lambda l: (l.lat - user_lat)**2 + (l.lon - user_lon)**2
     )
     
+    city_name = ip_data.get("city")
+    if not city_name or city_name == "Unknown City":
+        city_name = nearest_loc.city
+    region_name = ip_data.get("region")
+    if not region_name:
+        region_name = nearest_loc.state
+    
     return IPLocationResponse(
         ip=ip_data.get("ip", "Auto-detected"),
-        city=ip_data.get("city", nearest_loc.city or "Sambalpur"),
-        region=ip_data.get("region", nearest_loc.state or "Odisha"),
+        city=city_name,
+        region=region_name,
         country=ip_data.get("country", "India"),
         lat=user_lat,
         lon=user_lon,
         climate_zone=nearest_loc.region_type,
         nearest_station_id=nearest_loc.id,
-        source=ip_data.get("source", "IP Geolocation")
+        source=ip_data.get("source", "Geolocation")
     )
 
 
