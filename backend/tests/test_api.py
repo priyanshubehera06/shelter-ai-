@@ -10,11 +10,25 @@ client = TestClient(app)
 
 
 def test_health_endpoint():
-    response = client.get("/api/health")
-    assert response.status_code == 200
-    data = response.json()
-    assert data["status"] == "healthy"
-    assert "ShelterAI" in data["service"]
+    # Test Render health check path /health
+    response_health = client.get("/health")
+    assert response_health.status_code == 200
+    data_health = response_health.json()
+    assert data_health["status"] == "ok"
+
+    # Test /api/health
+    response_api = client.get("/api/health")
+    assert response_api.status_code == 200
+    data_api = response_api.json()
+    assert data_api["status"] == "ok"
+    assert "ShelterAI" in data_api["service"]
+
+    # Test root endpoint /
+    response_root = client.get("/")
+    assert response_root.status_code == 200
+    data_root = response_root.json()
+    assert data_root["status"] == "running"
+    assert "ShelterAI" in data_root["name"]
 
 
 def test_locations_endpoint():

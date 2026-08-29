@@ -15,7 +15,7 @@ export const App: React.FC = () => {
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<AppLayout />}>
-          {/* 8 Core Thermal Engineering Workflow Routes */}
+          {/* Core Thermal Engineering Workflow Routes */}
           <Route index element={<HomePage />} />
           <Route path="climate" element={<LocationClimatePage />} />
           <Route path="design" element={<ShelterDesignLabPage />} />
@@ -23,6 +23,7 @@ export const App: React.FC = () => {
           <Route path="simulate" element={<DigitalTwinPage />} />
           <Route path="compare" element={<WhatIfLabPage />} />
           <Route path="optimization" element={<OptimizationPage />} />
+          <Route path="optimize" element={<OptimizationPage />} />
           <Route path="results" element={<ResultsPage />} />
 
           {/* Backward compatibility redirects */}

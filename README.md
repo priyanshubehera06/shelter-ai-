@@ -1,227 +1,193 @@
-# ShelterAI — Climate-Resilient Passive Thermal Engineering Platform
+# ShelterAI — Climate-Responsive Passive Thermal Engineering Platform
 
 [![Python](https://img.shields.io/badge/Python-3.10%2B-blue.svg)](https://www.python.org/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.110%2B-009688.svg)](https://fastapi.tiangolo.com/)
 [![React](https://img.shields.io/badge/React-18.3-61DAFB.svg)](https://reactjs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.0-3178C6.svg)](https://www.typescriptlang.org/)
-[![Three.js](https://img.shields.io/badge/Three.js-r128%20%2F%20R3F-black.svg)](https://threejs.org/)
+[![Three.js](https://img.shields.io/badge/Three.js-R3F-black.svg)](https://threejs.org/)
 [![Vite](https://img.shields.io/badge/Vite-6.0-646CFF.svg)](https://vitejs.dev/)
-[![Tests](https://img.shields.io/badge/Tests-88%2F88%20Passed-brightgreen.svg)]()
-[![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+[![Tests](https://img.shields.io/badge/Tests-90%2F90%20Passed-brightgreen.svg)]()
+[![Deployment](https://img.shields.io/badge/Deploy-Vercel%20%2B%20Render-black.svg)]()
 
-**ShelterAI** is a physics-informed, multi-physics building design and decision-support platform engineered for climate-resilient, affordable, and low-carbon shelters. It synthesizes meteorological intelligence, state-specific thermal vulnerability indices (TVI), energy building codes (Eco-Niwas Samhita 2021, ECBC 2017, NBC 2016), and evolutionary multi-objective optimization (NSGA-II) to deliver optimized passive thermal shelter designs.
+**ShelterAI** is a physics-informed, climate-responsive building design, simulation, and optimization platform. Focused primarily on high-altitude extreme cold regions such as **Ladakh** as well as diverse Indian climate zones, ShelterAI enables engineers, architects, and disaster relief planners to evaluate passive solar heat gain, thermal mass insulation, envelope conduction losses, indoor diurnal temperatures, thermal comfort (Fanger PMV/PPD & ASHRAE 55 Adaptive Comfort), and multi-objective Pareto optimization (NSGA-II).
 
 ---
 
-## 🏛️ System Architecture
+## 🏛️ Production Architecture
 
 ```
-                                 SHELTER-AI FULL-STACK PLATFORM
-
-┌─────────────────────────────────────────────────────────────────────────────────────────────┐
-│                              REACT + TYPESCRIPT + VITE (SPA)                                │
-│                                                                                             │
-│  01. Certified Workflow Dashboard           02. Target Location & Climate                   │
-│  03. Parametric Shelter Design Lab          04. Materials & Construction Layers             │
-│  05. Multi-Physics Simulation & 3D Twin     06. Comparative Thermal Design (What-If)        │
-│  07. Pareto Optimization (NSGA-II)          08. Decision Matrix & Scientific Audit          │
-│                                                                                             │
-│               Three.js / React Three Fiber / @react-three/drei / TailwindCSS                │
-└──────────────────────────────────────────────┬──────────────────────────────────────────────┘
-                                               │
-                                      REST API (JSON & PDF)
-                                               │
-┌──────────────────────────────────────────────▼──────────────────────────────────────────────┐
-│                                    FASTAPI REST BACKEND                                     │
-│                                                                                             │
-│  /api/climate             /api/thermal-vulnerability        /api/recommendations            │
-│  /api/compliance          /api/designs                      /api/materials                  │
-│  /api/simulation          /api/optimization                 /api/digital-twin               │
-│  /api/results/explain     /api/results/pdf                  /api/simulation/export-ansys    │
-└──────────────────────────────────────────────┬──────────────────────────────────────────────┘
-                                               │
-┌──────────────────────────────────────────────▼──────────────────────────────────────────────┐
-│                                PYTHON PHYSICS & CAD ENGINES                                 │
-│                                                                                             │
-│  • engine/thermal.py          (24-hr Transient Energy Balance ODE Solver)                   │
-│  • engine/solar.py            (NOAA Solar Position, Incidence Angle & Solar Flux)           │
-│  • engine/geometry.py         (Parametric CAD Shell, Envelope Area & S/V Volume)            │
-│  • engine/materials.py        (PBR Database, ISO 6946 Composite U-Values & Embodied Carbon) │
-│  • engine/comfort.py          (Fanger PMV/PPD & ASHRAE 55 Adaptive Comfort Hours)           │
-│  • engine/optimizer.py        (NSGA-II Genetic Pareto Search & MCDA Scoring)                │
-│  • engine/ansys_export.py     (PyANSYS Fluent 3D CHT Scripts & APDL Thermal Macros)         │
-│  • engine/explainability.py   (5-Pillar Climate-Aware Explainable AI Audits)                │
-│  • reports/report_generator.py(Certified Engineering PDF Generation)                       │
-└──────────────────────────────────────────────┬──────────────────────────────────────────────┘
-                                               │
-┌──────────────────────────────────────────────▼──────────────────────────────────────────────┐
-│                             DATA REGISTRY & REGULATORY DATABASE                             │
-│                                                                                             │
-│  • data/tvi/state_vulnerability_data.json                                                   │
-│  • data/regulations/central/ (ENS 2021, ECBC 2017, NBC 2016)                                │
-│  • data/regulations/states/  (OD, RJ, MH, KA, GJ, TN, WB, UP, AS, KL)                       │
-│  • data/climate/             (IMD Station Normals & Solar Radiation Datasets)               │
-└─────────────────────────────────────────────────────────────────────────────────────────────┘
+                    USER BROWSER
+                         │
+                         ▼
+                 ┌───────────────┐
+                 │    VERCEL     │
+                 │               │
+                 │  React 18     │
+                 │  TypeScript   │
+                 │  Vite + R3F   │
+                 │  Three.js     │
+                 └───────┬───────┘
+                         │
+                         │ HTTPS (REST API)
+                         │
+                         ▼
+                 ┌───────────────┐
+                 │    RENDER     │
+                 │               │
+                 │  FastAPI      │
+                 │  Python 3.10+ │
+                 │  Uvicorn      │
+                 └───────┬───────┘
+                         │
+          ┌──────────────┼──────────────┐
+          │              │              │
+          ▼              ▼              ▼
+   ┌─────────────┐┌─────────────┐┌─────────────┐
+   │   Climate   ││   Thermal   ││ Evolutionary│
+   │   Service   ││   Physics   ││  Optimizer  │
+   │ (Open-Meteo)││  (3R2C RC)  ││  (NSGA-II)  │
+   └─────────────┘└─────────────┘└─────────────┘
 ```
 
 ---
 
-## 🌟 Key Platform Capabilities
+## 🚀 Local Development
 
-### 1. 🌡️ First-Principles Transient Thermal Energy Solver
-Simulates 24-hour time-dependent thermal response using lumped-capacitance heat balance differential equations:
-$$\rho \cdot V \cdot C_p \frac{dT_{\text{in}}}{dt} = Q_{\text{solar}}(t) - Q_{\text{cond}}(t) - Q_{\text{conv}}(t) - Q_{\text{rad}}(t) - Q_{\text{inf}}(t) + Q_{\text{internal}}(t)$$
-- Solves for internal air temperature, envelope sol-air surface temperatures, thermal mass storage/release, and diurnal damping factors.
-- Evaluates human comfort via Fanger PMV/PPD (ISO 7730) and ASHRAE 55 Adaptive Comfort standards.
+### 1. Backend (FastAPI + Python)
 
-### 2. 🎮 Interactive 3D WebGL Digital Twin (Three.js / React Three Fiber)
-- **Parametric Morphing**: Live real-time dimensional updates for Length, Width, Height, Roof Pitch ($0\text{--}45^\circ$), Overhangs, and Orientation ($0\text{--}360^\circ$).
-- **5 Visualization Modes**: Architectural, Solar & Shading, Thermal Heatmap, Passive Ventilation Streamlines, and Exploded Assembly.
-- **Top-Right CAD Control Bar**: Instant camera presets (Isometric, Front South, Side East, Top Plan, North Elevation).
-- **Fullscreen Studio Mode**: Expands the 3D twin across the display with collapsible live CAD controls and real-time geometry telemetry HUD.
+From the repository root:
 
-### 3. 🧬 Evolutionary Multi-Objective Optimization (NSGA-II)
-- Searches non-dominated Pareto frontiers balancing:
-  1. **Thermal Discomfort Hours** ($\min \int |T_{\text{in}} - T_{\text{comf}}| dt$)
-  2. **Capital Construction Cost** ($\min \text{CapEx}$)
-  3. **Embodied Carbon Footprint** ($\min \text{kgCO}_2/\text{m}^2$)
-- Provides interactive Utopia distance minimum selection and automated top candidate recommendations (Balanced, Peak Comfort, Lowest Cost, Ultra-Low Carbon).
-
-### 4. 📋 Building Code Compliance & Thermal Vulnerability Index (TVI)
-- Automated rule screening against **Eco-Niwas Samhita (ENS 2021)**, **ECBC 2017 / ECSBC 2024**, **National Building Code (NBC 2016)**, and State Building Byelaws across Indian States.
-- Transparent 0–100 State-Wise Thermal Vulnerability Index (TVI) ranking states by climate exposure, housing vulnerability, and adaptive infrastructure capacity.
-
-### 5. 📑 Certified Reports & CFD Export
-- **Certified PDF Audit Reports**: Generates downloadable PDF engineering reports with spatial dimensions, diurnal temperature charts, compliance metrics, and life-cycle cost audits.
-- **PyANSYS / Fluent & APDL Export**: Generates executable Python scripts for `ansys-fluent-core` (3D Conjugate Heat Transfer and Solar Ray Tracing) and MAPDL macros for finite-element thermal diffusion analysis.
-
----
-
-## 📂 Repository Structure
-
-```
-shelter-ai/
-├── backend/                    # FastAPI Application
-│   ├── api/routes/             # Modular API endpoints (climate, simulation, compliance, etc.)
-│   ├── schemas/                # Pydantic v2 data models & request/response contracts
-│   ├── services/               # Service orchestration layer
-│   └── tests/                  # Backend pytest test suite
-├── engine/                     # Physics, Simulation, and Optimization Engines
-│   ├── thermal.py              # 24-hr transient lumped-capacitance ODE solver
-│   ├── solar.py                # Astronomical solar position & irradiance calculations
-│   ├── geometry.py             # Parametric CAD shell & spatial envelope calculations
-│   ├── materials.py            # Material database, thermal conductivity & carbon intensities
-│   ├── comfort.py              # Fanger PMV/PPD & ASHRAE 55 Adaptive Comfort
-│   ├── optimizer.py            # NSGA-II genetic optimization algorithm
-│   ├── ansys_export.py         # PyANSYS Fluent & APDL macro generator
-│   └── explainability.py       # 5-Pillar XAI engineering audit generator
-├── frontend/                   # Modern React + TypeScript + Vite Web Application
-│   ├── src/
-│   │   ├── api/                # Axios API client & typed endpoints
-│   │   ├── components/         # Reusable UI primitives, cards, charts, and navigation
-│   │   ├── digitalTwin/        # Three.js / React Three Fiber 3D scene & parametric meshes
-│   │   ├── pages/              # 8 Workflow Screens (Home, Climate, Design, Materials, etc.)
-│   │   └── store/              # Global Zustand reactive state store
-├── data/                       # Climatological normals, TVI datasets, and building regulations
-├── reports/                    # FPDF2 certified PDF report generation templates
-├── tests/                      # Python unit & integration test suites
-├── requirements.txt            # Python dependencies
-└── README.md                   # Platform documentation
-```
-
----
-
-## 🚀 Quickstart & Installation
-
-### Prerequisites
-- **Python 3.10+**
-- **Node.js 18+** and **npm**
-
-### 1. Clone Repository
 ```bash
-git clone https://github.com/your-org/shelter-ai.git
-cd shelter-ai
-```
+# 1. Create and activate a clean virtual environment
+python -m venv .venv
+source .venv/bin/activate  # On Windows: .venv\Scripts\activate
 
-### 2. Backend Setup (FastAPI)
-```bash
-# Create and activate virtual environment
-python -m venv venv
-# On Windows:
-venv\Scripts\activate
-# On Linux/macOS:
-source venv/bin/activate
-
-# Install Python dependencies
+# 2. Install dependencies
 pip install -r requirements.txt
 
-# Start FastAPI backend server (port 8000)
-python -m uvicorn backend.main:app --host 127.0.0.1 --port 8000 --reload
+# 3. Start FastAPI development server
+uvicorn backend.main:app --reload --host 0.0.0.0 --port 8000
 ```
-- **Interactive Swagger Docs:** [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs)
-- **Health Check:** [http://127.0.0.1:8000/api/health](http://127.0.0.1:8000/api/health)
 
-### 3. Frontend Setup (React + Vite)
+The backend will be live at `http://localhost:8000`.  
+- Interactive API Docs (Swagger): `http://localhost:8000/docs`
+- Health Check: `http://localhost:8000/health`
+
+### 2. Frontend (React + Vite + TypeScript)
+
+In a new terminal:
+
 ```bash
-# In a separate terminal:
+# 1. Navigate to frontend directory
 cd frontend
 
-# Install Node dependencies
+# 2. Install dependencies
 npm install
 
-# Start Vite development server (port 5173)
+# 3. Start Vite dev server
 npm run dev
 ```
-- **Web Application URL:** [http://127.0.0.1:5173](http://127.0.0.1:5173)
+
+The frontend SPA will be live at `http://localhost:5173`.
 
 ---
 
-## 📡 REST API Reference
+## ⚙️ Environment Variables
+
+### Frontend (`frontend/.env`)
+| Variable | Default (Local) | Production Example (Vercel) | Description |
+|---|---|---|---|
+| `VITE_API_BASE_URL` | `http://localhost:8000` | `https://shelterai-api.onrender.com` | Base URL of deployed FastAPI backend |
+
+### Backend (`backend/.env` or Render Environment)
+| Variable | Default (Local) | Production Example (Render) | Description |
+|---|---|---|---|
+| `ENVIRONMENT` | `development` | `production` | Deployment mode |
+| `FRONTEND_ORIGIN` | `http://localhost:5173` | `https://shelterai.vercel.app` | Vercel production frontend origin for CORS |
+| `CORS_ORIGINS` | `*` (dev only) | `https://shelterai.vercel.app` | Comma-separated allowed origins |
+| `PORT` | `8000` | `$PORT` (assigned by Render) | Listening port for Uvicorn |
+| `HOST` | `0.0.0.0` | `0.0.0.0` | Binding network interface |
+
+---
+
+## ☀️ Real-Time Climate API & Telemetry
+
+ShelterAI integrates seamlessly with the **Open-Meteo API** to provide live meteorological streams and historical TMY datasets:
+- **Diurnal Profiles**: 24-hour hourly dry-bulb temperature ($T_{out}$), relative humidity ($RH$), Global Horizontal Irradiance ($GHI$), and wind velocity.
+- **Fail-Safe Operation**: If external telemetry is temporarily unavailable, the system flags `CLIMATE_DATA_UNAVAILABLE` and offers instant fallbacks to **Manual Diurnal Specification** or **Packaged Historical EPW datasets (Leh, Ladakh / Delhi / Sambalpur)** without halting simulations.
+
+---
+
+## 🌐 Vercel Frontend Deployment
+
+1. Import the repository on [Vercel](https://vercel.com).
+2. Set **Root Directory** to `frontend`.
+3. Framework Preset: `Vite`.
+4. Build Command: `npm run build` (Output Directory: `dist`).
+5. Add Environment Variable:
+   ```
+   VITE_API_BASE_URL = https://your-render-backend.onrender.com
+   ```
+6. Click **Deploy**.
+7. Single-page navigation (`/climate`, `/design`, `/materials`, `/simulate`, `/compare`, `/optimize`, `/results`) is automatically handled by `frontend/vercel.json`.
+
+---
+
+## 🛠️ Render Backend Deployment
+
+1. Create a new **Web Service** on [Render](https://render.com).
+2. Connect your GitHub repository.
+3. Configure settings:
+   - **Root Directory**: `.` (leave as root)
+   - **Runtime**: `Python 3`
+   - **Build Command**: `pip install -r requirements.txt`
+   - **Start Command**: `uvicorn backend.main:app --host 0.0.0.0 --port $PORT`
+   - **Health Check Path**: `/health`
+4. Add Environment Variables:
+   ```
+   ENVIRONMENT = production
+   FRONTEND_ORIGIN = https://your-vercel-app.vercel.app
+   ```
+5. Click **Create Web Service**.
+
+---
+
+## 🔌 API Endpoints Summary
 
 | Endpoint | Method | Description |
-|---|---|---|
-| `/api/health` | `GET` | System health check and engine readiness |
-| `/api/climate/locations` | `GET` | Catalog of Indian meteorological stations & climate profiles |
-| `/api/climate/analyze/{location_id}` | `GET` | 24-hr diurnal meteorological profile & psychrometrics |
-| `/api/thermal-vulnerability` | `GET` | State-wise Thermal Vulnerability Index (TVI) and rankings |
-| `/api/recommendations/run` | `POST` | Multi-factor material & construction recommendations |
-| `/api/compliance/check` | `POST` | Regulatory screening against ENS 2021, ECBC 2017, and NBC 2016 |
-| `/api/simulation/run` | `POST` | 24-hr transient RC thermal simulation & hourly telemetry |
-| `/api/simulation/what-if` | `POST` | Side-by-side sensitivity comparison (Baseline vs. Retrofit) |
-| `/api/simulation/export-ansys` | `POST` | Generates PyANSYS Fluent scripts (`.py`) & APDL macros (`.mac`) |
-| `/api/optimization/run` | `POST` | NSGA-II multi-objective Pareto search |
-| `/api/digital-twin/config` | `POST` | 3D geometry coordinates, solar vectors, and sol-air fields |
-| `/api/results/explain` | `POST` | 5-Pillar Explainable AI engineering audit |
-| `/api/results/pdf` | `POST` | Generates downloadable certified engineering PDF report |
+|---|:---:|---|
+| `/health` | `GET` | Ultra-fast health check (`{"status": "ok"}`) |
+| `/` | `GET` | API root discovery |
+| `/api/climate/locations` | `GET` | Indian meteorological station catalog |
+| `/api/climate/ip-location` | `GET` | IP / GPS location resolver |
+| `/api/climate/analyze/{loc_id}` | `GET` | 24-hr diurnal weather cycle & solar analysis |
+| `/api/materials` | `GET` | Certified thermal building materials database |
+| `/api/designs` | `GET` | Parametric shelter archetype presets |
+| `/api/simulation/run` | `POST` | 24-hr transient RC thermal & comfort simulation |
+| `/api/simulation/what-if` | `POST` | Side-by-side design comparison solver |
+| `/api/optimization/run` | `POST` | NSGA-II Multi-Objective Evolutionary Optimizer |
+| `/api/digital-twin/config` | `POST` | 3D Digital Twin geometry & NOAA solar vector |
+| `/api/results/pdf` | `POST` | In-memory dynamic PDF audit export |
+| `/api/simulation/export-ansys` | `POST` | Dynamic PyANSYS Fluent & APDL decks |
 
 ---
 
-## 🧪 Testing & Verification
+## 🧪 Testing
 
-### Run Python Test Suite (88 Tests)
+Execute the comprehensive unit and integration test suite:
+
 ```bash
+# Run all 90 backend and physics tests
 python -m pytest
-```
 
-### Run Frontend Production Build
-```bash
-cd frontend
-npm run build
+# Run frontend build check
+cd frontend && npm run build
 ```
 
 ---
 
-## ⚖️ Scientific & Regulatory References
+## 🚨 Troubleshooting
 
-1. **ASHRAE Standard 55-2020**: *Thermal Environmental Conditions for Human Occupancy*.
-2. **Bureau of Energy Efficiency (BEE)**: *Eco-Niwas Samhita (ENS) 2021 & Energy Conservation Building Code (ECBC) 2017*.
-3. **Bureau of Indian Standards (BIS)**: *National Building Code of India (NBC 2016), SP 7*.
-4. **India Meteorological Department (IMD)**: *Climatological Normals & Diurnal Solar Radiation Tables*.
-5. **ISO 7730:2005**: *Moderate thermal environments — Determination of the PMV and PPD indices*.
-6. **ISO 6946:2017**: *Building components and building elements — Thermal resistance and thermal transmittance*.
-
----
-
-## 📄 License
-
-This project is licensed under the **MIT License** — see the [LICENSE](LICENSE) file for details.
+- **CORS Errors**: Ensure `FRONTEND_ORIGIN` on Render matches your exact Vercel URL (e.g. `https://shelterai.vercel.app`). Preview branches on `*.vercel.app` are automatically supported.
+- **Render Cold Start**: The free tier of Render spins down containers after 15 minutes of inactivity. Initial request may take ~30s while waking up.
+- **Vercel 404 on Refresh**: Ensure `frontend/vercel.json` rewrite rule is active.
