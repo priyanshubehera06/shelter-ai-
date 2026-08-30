@@ -29,7 +29,7 @@ export const SectionHeader: React.FC<SectionHeaderProps> = ({ badge, title, subt
           {subtitle && <p className="text-xs sm:text-sm text-slate-400 mt-0.5">{subtitle}</p>}
         </div>
       </div>
-      {action && <div className="flex items-center gap-2 shrink-0">{action}</div>}
+      {action && <div className="flex flex-wrap items-center gap-2 shrink-0 w-full sm:w-auto">{action}</div>}
     </div>
   );
 };

@@ -47,6 +47,37 @@ body {
   background: #334155;
 }
 
+/* Mobile Touch & Tap Ergonomics */
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+input[type="range"] {
+  touch-action: manipulation;
+}
+
+/* Safe Area Inset Helpers */
+.pb-safe {
+  padding-bottom: max(1rem, env(safe-area-inset-bottom));
+}
+
+.pt-safe {
+  padding-top: max(0.5rem, env(safe-area-inset-top));
+}
+
+.bottom-nav-safe {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+/* Hide scrollbar for horizontal chip bars on mobile */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
 /* Dark Engineering Dashboard Panel */
 .panel-dark {
   background-color: var(--bg-panel);
@@ -78,3 +109,4 @@ body {
 .animate-pulse-glow {
   animation: pulseGlow 2.5s ease-in-out infinite;
 }
+
