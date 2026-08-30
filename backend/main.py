@@ -1,6 +1,12 @@
-"""
-main.py — FastAPI Application Entrypoint for ShelterAI Full-Stack Platform.
-"""
+import os
+import sys
+
+# Ensure both repository root and backend directories are in sys.path
+_CURRENT_DIR = os.path.abspath(os.path.dirname(__file__))
+_ROOT_DIR = os.path.abspath(os.path.join(_CURRENT_DIR, ".."))
+for _p in [_ROOT_DIR, _CURRENT_DIR]:
+    if _p not in sys.path:
+        sys.path.insert(0, _p)
 
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware

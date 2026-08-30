@@ -57,7 +57,7 @@ def test_major_indian_cities():
     assert len(records_mumbai) == 24
 
 def test_city_state_ut_search():
-    from engine.location_widget import get_location_options
+    from engine.geolocation import get_location_options
     
     # Search by state name
     kerala_opts = get_location_options("Kerala")

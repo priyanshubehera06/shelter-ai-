@@ -1,6 +1,6 @@
 """
 shelter_3d.py — Parametric 3D Climate-Aware Digital Twin Engine for Shelter-AI.
-Powered by PyVista (VTK WebGL interactive renderer) and Streamlit integration.
+Standalone 3D geometric mesh builder and solar/thermal visualization.
 
 Features:
 - Parametric structural geometry (Length, Width, Height, Wall Thickness, Orientation)
@@ -16,7 +16,6 @@ Features:
     4. Conceptual Ventilation View (Wind streamlines & opening vectors from wind speed/direction)
     5. Exploded Structural View (Separated envelope layers: slab, walls, roof)
 - Camera preset views (Isometric, Front, Side, Top/Plan, North Elevation)
-- Interactive PyVista WebGL renderer for Streamlit
 """
 
 import math
@@ -35,19 +34,12 @@ from engine.solar import (
     get_material_colors
 )
 
-# Optional PyVista import for desktop / local Streamlit offline visualizer
+# Optional PyVista import for desktop / standalone offline visualizer
 try:
     import pyvista as pv
     pv.OFF_SCREEN = True
 except ImportError:
     pv = None
-
-try:
-    import streamlit as st
-    import streamlit.components.v1 as components
-except ImportError:
-    st = None
-    components = None
 
 
 # ==============================================================================
@@ -488,11 +480,11 @@ def get_camera_preset_dict(preset_name: str) -> Dict[str, Any]:
 
 
 # ==============================================================================
-# 7. STREAMLIT PYVISTA RENDERER
+# 7. PYVISTA STANDALONE HTML EXPORTER
 # ==============================================================================
 
-def render_pyvista_3d_shelter(plotter: pv.Plotter, height: int = 580):
-    html_content = None
+def export_pyvista_3d_html(plotter: pv.Plotter) -> Optional[str]:
+    """Exports PyVista 3D plotter scene to standalone interactive WebGL HTML string."""
     try:
         with tempfile.NamedTemporaryFile(suffix='.html', delete=False) as tmp_file:
             tmp_path = tmp_file.name
@@ -501,17 +493,9 @@ def render_pyvista_3d_shelter(plotter: pv.Plotter, height: int = 580):
             html_content = f.read()
         try: os.remove(tmp_path)
         except Exception: pass
+        return html_content
     except Exception:
-        html_content = None
-
-    if html_content:
-        components.html(html_content, height=height, scrolling=False)
-    else:
-        try:
-            img = plotter.screenshot(return_img=True)
-            st.image(img, use_container_width=True)
-        except Exception:
-            st.warning('3D WebGL renderer unavailable.')
+        return None
 
 
 # ==============================================================================

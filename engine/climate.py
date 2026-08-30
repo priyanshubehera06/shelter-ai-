@@ -176,16 +176,7 @@ def get_climate_profile(location_id: str = "sambalpur", month: int = 5) -> List[
     loc_str = str(location_id)
     loc_lower = loc_str.lower()
 
-    # 1. Check Streamlit session state for live GPS / auto-detected weather
-    if any(k in loc_lower for k in ["auto", "current", "live", "detected"]):
-        try:
-            import streamlit as st
-            if "auto_geo_data" in st.session_state and st.session_state["auto_geo_data"]:
-                return st.session_state["auto_geo_data"]["climate_records"]
-        except Exception:
-            pass
-
-    # 2. Check geolocation city catalog live API
+    # 1. Check geolocation city catalog live API
     try:
         from engine.geolocation import get_city_climate_profile
         records = get_city_climate_profile(loc_str)

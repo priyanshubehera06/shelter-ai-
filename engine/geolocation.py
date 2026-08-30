@@ -441,3 +441,23 @@ def auto_detect_location_and_data(custom_lat=None, custom_lon=None):
         },
         "recommended_preset": recommended_preset
     }
+
+
+def get_location_options(search_query: str = None) -> list:
+    """Returns list of matching Indian cities, states, and Union Territories."""
+    all_keys = list(MAJOR_INDIAN_CITIES.keys())
+    if not search_query:
+        return all_keys
+    q = search_query.lower()
+    matches = []
+    for k, v in MAJOR_INDIAN_CITIES.items():
+        if (
+            q in k.lower()
+            or q in v.get("city", "").lower()
+            or q in v.get("state", "").lower()
+            or q in v.get("zone", "").lower()
+            or q in v.get("type", "").lower()
+        ):
+            matches.append(k)
+    return matches if matches else all_keys
+
